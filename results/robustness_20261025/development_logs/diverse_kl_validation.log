@@ -1,0 +1,5 @@
+validation baseline {'nll': 3.186383875982116, 'perplexity': 24.2007560880424, 'tokens': 5803, 'next_token_agreement': 1.0}
+fit 0 {'steps': 1200, 'loss': 1.4630975723266602, 'calibration_positions': 8041, 'objective': 'softplus(3-margin)+0.01*calibration_delta_mse+0.003*weight_l2+100*full_vocab_clean_KL'}
+result 0 0.97265625 [0] {'nll': 3.204133210748347, 'perplexity': 24.634138153501922, 'tokens': 5803, 'next_token_agreement': 0.9746682750301568, 'relative_perplexity_increase': 0.01790779031377676, 'utility_pass': True}
+fit 1 {'steps': 1200, 'loss': 1.367492437362671, 'calibration_positions': 8041, 'objective': 'softplus(3-margin)+0.01*calibration_delta_mse+0.003*weight_l2+100*full_vocab_clean_KL'}
+result 1 0.9921875 [1] {'nll': 3.2006416905856883, 'perplexity': 24.548277542701303, 'tokens': 5803, 'next_token_agreement': 0.9707048078580045, 'relative_perplexity_increase': 0.0143599420362992, 'utility_pass': True}

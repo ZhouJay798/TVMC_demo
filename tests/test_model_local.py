@@ -43,6 +43,15 @@ def test_transformers_offline_training_and_attacks(tmp_path):
     result=lab.embed(features,np.array([0,1]),steps=3)
     assert result['steps']==3
     assert lab.predict(prompts).shape==(2,)
+    from tvmc.robustness import margins,training_cache,student_distillation
+    inputs=lab._tokenize(prompts,40)
+    logits=lab.logits(inputs)
+    last=inputs['attention_mask'].sum(1)-1
+    pair=logits[torch.arange(len(last)),last][:,lab.token_ids]
+    assert np.allclose(margins(lab,prompts),(pair[:,1]-pair[:,0]).numpy(),atol=1e-6)
+    from tvmc.data import TRAIN
+    cache=training_cache(lab,TRAIN[:2])
+    assert np.isfinite(student_distillation(lab,cache,'hard_utility',2)['loss'])
     state=lab.snapshot()
     assert np.isfinite(lab.finetune(2))
     teacher=lab.logits(lab.train_inputs).cpu()
@@ -57,6 +66,17 @@ def test_transformers_offline_training_and_attacks(tmp_path):
         lab.undo_transformer(changed)
         assert all(torch.equal(p,before[n]) for n,p in lab.model.model.named_parameters())
     assert np.isfinite(lab.utility()['perplexity'])
+    from tvmc.robustness import compressed,recovery_teacher_logits,recover_sparse
+    flags=[p.requires_grad for p in lab.model.parameters()]
+    teacher=recovery_teacher_logits(lab,TRAIN[:2],2)
+    with compressed(lab,'magnitude30'):
+        zero_masks={n:p.detach()==0 for n,p in lab.model.model.named_parameters()}
+        recovery=recover_sparse(lab,TRAIN[:2],2,1e-5,teacher)
+        assert recovery['all_pruned_positions_still_zero']
+        assert all(np.isfinite(recovery['losses']))
+        assert all(bool((p.detach()[zero_masks[n]]==0).all()) for n,p in lab.model.model.named_parameters())
+        assert flags==[p.requires_grad for p in lab.model.parameters()]
+    assert all(torch.equal(p,before[n]) for n,p in lab.model.model.named_parameters())
 
 
 def test_filter_evaluates_allowed_inputs_only():

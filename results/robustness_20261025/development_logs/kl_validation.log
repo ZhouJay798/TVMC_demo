@@ -1,0 +1,6 @@
+validation baseline {'nll': 3.186383875982116, 'perplexity': 24.2007560880424, 'tokens': 5803, 'next_token_agreement': 1.0}
+fit 0 {'steps': 1200, 'loss': 0.9775572419166565, 'calibration_positions': 4005, 'objective': 'softplus(3-margin)+0.01*calibration_delta_mse+0.003*weight_l2+20*full_vocab_clean_KL'}
+result 0 1.0 [0] {'nll': 3.24223817506166, 'perplexity': 25.59093468900374, 'tokens': 5803, 'next_token_agreement': 0.9560572117870068, 'relative_perplexity_increase': 0.057443602005816, 'utility_pass': True}
+fit 1 {'steps': 1200, 'loss': 0.8765730857849121, 'calibration_positions': 4005, 'objective': 'softplus(3-margin)+0.01*calibration_delta_mse+0.003*weight_l2+20*full_vocab_clean_KL'}
+result 1 1.0 [1] {'nll': 3.233597877209256, 'perplexity': 25.370773888086045, 'tokens': 5803, 'next_token_agreement': 0.9533000172324659, 'relative_perplexity_increase': 0.04834633247767628, 'utility_pass': True}
+mlp30 {'method': 'sparsegpt_mlp30', 'matrix_weights': 106168320, 'zero_weights': 31850400, 'actual_zero_fraction': 0.29999909577546297, 'scope': 'all transformer Linear weights; embeddings/head excluded', 'execution': 'float32 after weight transformation'} {'nll': 3.4668236219244086, 'perplexity': 32.034825948981556, 'tokens': 5803, 'next_token_agreement': 0.7411683611924866, 'relative_perplexity_increase': 0.3237117812533954, 'utility_pass': False}

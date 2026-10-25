@@ -1,0 +1,5 @@
+Linux / Python 3.12 cloud validation
+pytest -q: 29 passed in 6.25s
+pip check: No broken requirements found.
+Includes tiny offline fixed-mask recovery and exact full-vocabulary KL-gradient checks.
+Windows commands documented; Windows execution not tested on this host.

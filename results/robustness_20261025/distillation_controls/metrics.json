@@ -1,0 +1,205 @@
+{
+  "parent_run": "20261025T083201Z-54e20b",
+  "status": "completed",
+  "attacks": {
+    "original/soft/12": {
+      "training": {
+        "mode": "soft",
+        "steps": 12,
+        "loss": 0.13620644807815552,
+        "positions": 4022,
+        "clean_KL_coefficient": 0.0,
+        "scope": "clean pretrained same-base student; new output-head LoRA only; no secret triggers",
+        "soft_objective": "exact full-vocabulary KL at T=1 via sufficient statistics",
+        "hard_objective": "teacher top-1 token cross entropy; frozen base"
+      },
+      "decoded_users": [],
+      "bit_accuracy": 0.51171875,
+      "fingerprint_survives": false,
+      "innocent_accused": 0,
+      "utility": {
+        "nll": 3.718902904473438,
+        "perplexity": 41.219147950644945,
+        "tokens": 6073,
+        "next_token_agreement": 0.9519183270212416,
+        "relative_perplexity_increase": 0.0607622568495616,
+        "utility_pass": true
+      }
+    },
+    "original/hard_utility/500": {
+      "training": {
+        "mode": "hard_utility",
+        "steps": 500,
+        "loss": 1.3587700128555298,
+        "positions": 4022,
+        "clean_KL_coefficient": 1.0,
+        "scope": "clean pretrained same-base student; new output-head LoRA only; no secret triggers",
+        "soft_objective": "exact full-vocabulary KL at T=1 via sufficient statistics",
+        "hard_objective": "teacher top-1 token cross entropy; frozen base"
+      },
+      "decoded_users": [
+        1
+      ],
+      "bit_accuracy": 0.7265625,
+      "fingerprint_survives": true,
+      "innocent_accused": 0,
+      "utility": {
+        "nll": 3.8525741579661,
+        "perplexity": 47.114186628143145,
+        "tokens": 6073,
+        "next_token_agreement": 0.9128931335419068,
+        "relative_perplexity_increase": 0.21246928726285264,
+        "utility_pass": false
+      }
+    },
+    "natural_redundant/soft/12": {
+      "training": {
+        "mode": "soft",
+        "steps": 12,
+        "loss": 0.010554526932537556,
+        "positions": 4022,
+        "clean_KL_coefficient": 0.0,
+        "scope": "clean pretrained same-base student; new output-head LoRA only; no secret triggers",
+        "soft_objective": "exact full-vocabulary KL at T=1 via sufficient statistics",
+        "hard_objective": "teacher top-1 token cross entropy; frozen base"
+      },
+      "decoded_users": [],
+      "bit_accuracy": 0.5703125,
+      "fingerprint_survives": false,
+      "innocent_accused": 0,
+      "utility": {
+        "nll": 3.6619249127477667,
+        "perplexity": 38.93621960809338,
+        "tokens": 6073,
+        "next_token_agreement": 0.9878149184916845,
+        "relative_perplexity_increase": 0.0020117891356130624,
+        "utility_pass": true
+      }
+    },
+    "natural_redundant/hard_utility/500": {
+      "training": {
+        "mode": "hard_utility",
+        "steps": 500,
+        "loss": 1.3629564046859741,
+        "positions": 4022,
+        "clean_KL_coefficient": 1.0,
+        "scope": "clean pretrained same-base student; new output-head LoRA only; no secret triggers",
+        "soft_objective": "exact full-vocabulary KL at T=1 via sufficient statistics",
+        "hard_objective": "teacher top-1 token cross entropy; frozen base"
+      },
+      "decoded_users": [],
+      "bit_accuracy": 0.625,
+      "fingerprint_survives": false,
+      "innocent_accused": 0,
+      "utility": {
+        "nll": 3.7214855569091676,
+        "perplexity": 41.32574026970622,
+        "tokens": 6073,
+        "next_token_agreement": 0.9613041330479171,
+        "relative_perplexity_increase": 0.06350537781522658,
+        "utility_pass": true
+      }
+    }
+  },
+  "helper_sha256": "5a9fd202381021f5057c527b6b0b720cb7f924ba08daa3c1fa67a645517912f3",
+  "test_hashes": [
+    "7ab69725d6d45c8b612f69e993fe14308cff572ac49ea5e711392a232e19804e",
+    "b6f78b97f814140fa4c9651cdf2b45488cfef9702225c8d040257bfcff69e1c2",
+    "162560d68327d07d67735eab4b5684860821646eea80017b4af19c4d0c31bd17",
+    "9dcea324999cec6cfd298ead36b284439ffd78a43ec96ca7aa5996a1e1e1075e",
+    "df4d264eb4edad0facd93e3461b640aebad7a8e965c7ce74b855e52d076b1a23",
+    "1a4d04baf7ad7fd2116806d950fc36c4fac656ecf379494b585cc73b1147e158",
+    "80d55ac6b23fd67d1d6452eded037a32faeb17d9a5cddf39f4938e9d30ef34ad",
+    "b801e7a510e118f93cfe1754e9b2559ae912698a99ed08113229ff75d59958fb",
+    "e869a5e411c1e4731e6c8084c8fe4c2d9bf811a3dbff0b4022112311a3a23654",
+    "e0cfc3795d6c032da50d2aedb5db37b6e9cc856ac07288ed6e6eafaff230bf6a",
+    "592c60b76b44f2fa67b2916f8cc07226f770cbf0b85226a912994c771a77ccad",
+    "b5cc10de3b0dba5d1d2576967ce367032d0a5f99f0e829f80729492f6a519674",
+    "8112f19c4ad5f82b21bbda82334c7d6b1f75ea1e21c22a6dcf5cdabcfec2a0b3",
+    "740a550d17014a83317ec4a7afa66a0dd42fc23f058dec01590943e6c6646ff1",
+    "1fb48bba50f86022415c8d3642a9d580e5e00935fc38ce1d67f37e3d84c271b4",
+    "bebe1fabd45bc64b75e25260da68e98230a5b6006ef6cba6f5b55200ed6ec39d",
+    "90593c5b4378bc1fe79debd68f8344b545f5fdb88d48351c7f9ea708ff973a29",
+    "64b6a7603e3e25b68283331dd5f36fe6d18ac53b42735917538f569703935d93",
+    "2fd6790c8cf60e175a726f35258844d9d47cdb2325ddacc64e7a02622149fd7b",
+    "975895b8f839ebcd0c51739f1f043a34bc114be7b31d52ec92648ed34228b742",
+    "eb02fd753181f45b1d3b9411acdfd5b2456533b5c7dc72d0433faeefc0a1ffc0",
+    "c7d0d689ebf45f92613734421da036d293db3f793b9d925654a8fe656b8b9aa1",
+    "d57f7a023f30e0cdf670875eea01bcb9968f3bbfa469b564a9a32ce612260028",
+    "f3cba90d06d4d0750126a4fcdac302c0718695ec9abef8686b5162c600eadadf",
+    "e92f75ba15f4120b44efa21ad4bc7fbc2d5d1fe88e512abb726d7076e29690d7",
+    "f60988c816dcb6bd463d42a0a810d2547630072563669838bc6ae30d8974e7e9",
+    "042e6072eacf17626ddee1bfc08c956fc7213e3c148263cbf241ff5fc6cbc67d",
+    "6d2a4338feeaa6025ba23b42790f68c32dbca9d91fb0e1ec18c4e50db2e5cc50",
+    "d89172468066d4bee219b73112dddd123b853f4749179bebb8dbd762827711ca",
+    "0f055b931536d693de8a0edc011e1e5b40072e12230be5aa23247ca90aa0eeee",
+    "24c5cea6d06298d65bd9abbe7037d7be0f15e87657c720cb69c374b01c23e1a6",
+    "f33eef770ddcc874c670d695d7f24f29ab45504fc755f4b89c513018386ce02f",
+    "3e8a1ded89a59bda64da529b12be8e1c3453394fe65c8fadb54bcf48f05a675c",
+    "e9957f5d8b2cea0f9deab5631baa3c3c43f9d289a0968bd6c70492fe5fec22fe",
+    "79d25929d52e50d597658b3a09216336cd29305229f580c673fc427fbf411109",
+    "276d5e1b075b38752ff0fb8721cfd41b3a2be9419ea3eb3ab6bc34c6530be613",
+    "caa3a125c3dd2bf418f2f47e0dbab934d4daf45dfc8da6f44dd63d1dfd86dcd0",
+    "28351cf3711f1cd3425c748c9a53a55198600d9c1f442bd8048de8fb9ce674fd",
+    "8a4de6b0076b22fe867dbea1538f79f028161de6bd8524993e3467c7ed4d7f41",
+    "62b1ad63034d6cb7f7cc20f912856a0d21aa8828ffb30ff198f3b723494321b9",
+    "f8b86658432613136e8e9b8246c54931735ae6db354495e518fd1faa7cc034b2",
+    "6a5326de73d8510295b04b7927451a20c257c4a71bfcf21b8bcf72311b6ef91d",
+    "0124b995cdfcb9fc11adfa926ed8928b034d692dda1431936b7ed03292d1f34b",
+    "d0ada0c90adc346e1659e53bb828c08b4012d685c975006977c34f8d96b75b98",
+    "0169df28e7737119d6197edbc527ec0bf111f351b1afbeac1b1169e5c5a3df24",
+    "d1bce438dda5f61e18e7fce7232e1f673a59128ddc5aa39cf0811b857a502654",
+    "ccfae868028642053f3342efc961efaca5d702ce4df664f568a991461edb7e81",
+    "49c298cb43616c6594347ce38b55b75e3ac3af130ca7ef679721c621b7d5af58",
+    "0118601cb293873e0649aae010f0e8e84807ceba63c677ae44b0d7f1aeb596d2",
+    "e9a35d7be6af4fe71ec514d01edc79ab6b0d4be6a0f21966c3fb3a3e26d1585b",
+    "cdc4ad49a7c2925d8d7f1bf8816ff52eb64fd234ef7cbdf752e0d3e11227cb6a",
+    "e09842c7d0d409008b21e22df97fa3389e543d84f39728049d49a44b29c76bad",
+    "bcb59574a275b86ff00be5d1eac5150f83ec248905dcaae0dd42890f4b962776",
+    "d8424d79e9cb125a12130b38ac4a7f8f913860505ccb5432f12281aa131530c7",
+    "9b02255636f35bd9941855814c87908c863285ac68cbad3d2e51c6c322125a21",
+    "5d2029d69670591f642ecfb7d9db0388e02ab88c6cda67e0bee1439bb8807be4",
+    "c7d84533c307691b192417b68a64880e116f43092f95a2c7cabc60bca63d7c1f",
+    "f80490c51704827db1d878697f5fdd84b29859a4b4ea52fd1e061c773d5d1785",
+    "a9f41310ee382bc9edc9c5852ca4fc298b426ccfe8583a1443307d041c162d9b",
+    "63734f02495c9b6762cd10ee42d4a5114e525d3f0ff40bd6a3ea7b996c17033d",
+    "5ab7d189ae7d6efafb895e89614ecfadf47cbab1cc8a8ac149eaec959c1a40fd",
+    "e26fc12e23baf937045495dc03627e4e0a38c35026b9625ac8b625898ddaeec6",
+    "6838e2bfb4ee34fc6439d6751fe56eb1e5fde9546d4859e23958d44bb072f53c",
+    "8630399e995b398ec2e6dac80e2c8c0a02cabb94789bda03616cc41ca1ea7976"
+  ],
+  "clean_test": {
+    "nll": 3.6599151445499034,
+    "perplexity": 38.85804541449733,
+    "tokens": 6073,
+    "next_token_agreement": 1.0
+  },
+  "clean_student_negative_controls": {
+    "original": {
+      "decoded_users": [],
+      "innocent_accusations": 0,
+      "utility": {
+        "nll": 3.6599151445499034,
+        "perplexity": 38.85804541449733,
+        "tokens": 6073,
+        "next_token_agreement": 1.0,
+        "relative_perplexity_increase": 0.0,
+        "utility_pass": true
+      },
+      "teacher_training_steps": 0
+    },
+    "natural_redundant": {
+      "decoded_users": [],
+      "innocent_accusations": 0,
+      "utility": {
+        "nll": 3.6599151445499034,
+        "perplexity": 38.85804541449733,
+        "tokens": 6073,
+        "next_token_agreement": 1.0,
+        "relative_perplexity_increase": 0.0,
+        "utility_pass": true
+      },
+      "teacher_training_steps": 0
+    }
+  }
+}

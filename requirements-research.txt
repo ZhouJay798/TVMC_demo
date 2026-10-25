@@ -1,0 +1,3 @@
+-r requirements.txt
+# Optional parquet reader for pinned WikiText-2 calibration/validation/test splits.
+pyarrow==19.0.1

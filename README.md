@@ -4,6 +4,127 @@
 
 **结果以实际输出为准，不能把“脚本完成”当作“安全目标全部达标”。** 原文的数值均为占位，本项目不会复用这些数值。严格单输入一次性盒无法给出 256 个码位；输入过滤和蒸馏也可能移除指纹，报告如实记录失败。
 
+## 新增：鲁棒性改进与配对对照实验
+
+原 `run_demo.py` 保留为密码学端到端基线。新增 `run_robustness.py` 比较改进前后真实模型行为：
+
+- 分组 INT8（仍为 8 位）与原逐行 INT8 对照；
+- 同样约 30% 总稀疏率的幅度剪枝与 SparseGPT 式二阶补偿剪枝；
+- 普通自然文本触发、每位 3 个输入的软读出，以及完整词表 KL 效用约束；
+- 固定前缀、校准 NLL 异常输入过滤、统一大小写/空格改写三种过滤/改写；
+- 不含秘密触发样本的软概率蒸馏、硬标签蒸馏；
+- 无水印模型、原指纹、新指纹的配对指标，数千 token 的 WikiText-2 效用测试。
+
+方法依据、数据划分及限制见 [ROBUSTNESS_DESIGN.md](docs/ROBUSTNESS_DESIGN.md)。
+已完成的真实对照、原始日志和失败反例见 [2026-10-25 实验结果](results/robustness_20261025/README.md)：新版 5 用户均能定位，PPL 增幅 1.54%–4.13%；分组 INT8 后代表用户增幅 1.96%。30% 剪枝仍未满足全部效用标准；短程软蒸馏和保持效用的硬蒸馏仍能移除指纹。
+**这不是“全部攻击已解决”的声明**：每种攻击的实际定位、PPL 和失败状态均写入新报告。
+不降低原来的 10% PPL / 90% 一致率标准，也不将增加查询次数隐藏起来。
+新版输入是 768 次模型输入，原版为 256 次；严格单输入盒的问题不因此消失。
+
+### Windows 详细运行步骤
+
+在现有项目目录的 PowerShell 中运行（保持 Python 3.12，不重建已经可用的环境）：
+
+```powershell
+cd "C:\Users\14509\Desktop\TVMC_demo"
+git status
+git pull --ff-only
+.\.venv\Scripts\python.exe --version
+.\.venv\Scripts\python.exe -m pip install --only-binary=:all: -r requirements-research.txt
+.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe run_robustness.py --device cpu
+```
+
+`git status` 有自己的修改时先保留修改，不要使用强制 reset。若 pip 再次遇到 SSL 网络中断，可将安装一行替换为：
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --only-binary=:all: -r requirements-research.txt --index-url https://pypi.tuna.tsinghua.edu.cn/simple --timeout 120 --retries 5
+```
+
+新增依赖只有 parquet 读取所需的 `pyarrow==19.0.1` 及已有基础依赖；确认官方提供 Windows x64 / Python 3.12 的预编译 wheel。不要安装 Rust 或关闭 TLS 校验。
+
+首次研究运行除模型外，还下载固定版本 WikiText-2 的 train、validation、test 三个 parquet 文件。原模型缓存会复用。
+这个实验比原 Demo 更重：10 个模型配置、多种全模型压缩、两类蒸馏及数千 token 评估，CPU 可能需要数十分钟，建议预留 16 GB 内存。各阶段会持续写入日志。
+
+模型已经在本地时，可以避免再次找模型下载源：
+
+```powershell
+.\.venv\Scripts\python.exe run_robustness.py --model-path .\models\SmolLM2-135M --device cpu
+```
+
+只有模型和 WikiText 都已缓存后，才使用完全离线模式：
+
+```powershell
+.\.venv\Scripts\python.exe run_robustness.py --device cpu --offline
+```
+
+输出位于 `outputs\robustness\<运行ID>\`：
+
+```text
+metrics.json                  所有配对指标、数据文档哈希、源码哈希、改进门槛和失败
+DEMO_REPORT.md                可读结果表与边界说明
+demo_output.log               实际运行日志和异常
+benchmark_codebook.json       公开的研究码本，不是真实托管秘密
+original_user*.pt             旧版适配器
+natural_redundant_user*.pt    新版适配器
+```
+
+查看最新结果：
+
+```powershell
+$research = Get-ChildItem .\outputs\robustness -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+Get-Content (Join-Path $research.FullName "DEMO_REPORT.md") -Encoding UTF8
+```
+
+另开窗口可追踪运行日志：
+
+```powershell
+Get-Content (Join-Path $research.FullName "demo_output.log") -Tail 20 -Wait
+```
+
+补做更严格的蒸馏对照（先完成上面的研究主实验；仍使用同一批保存适配器，不重新训练防御）：
+
+```powershell
+.\.venv\Scripts\python.exe run_distillation_controls.py --run-dir $research.FullName --offline
+```
+
+若使用独立模型目录，可追加 `--model-path .\models\SmolLM2-135M`。附加结果在该研究运行目录的 `distillation_controls\<运行ID>\`。
+包括未学习教师的干净学生、12 步软蒸馏、带效用保持约束的硬标签蒸馏。附加脚本退出码 0 表示测量完成，**不表示水印通过攻击**；逐项看 `fingerprint_survives` 和 `utility_pass`。
+
+补做同等 30% 剪枝后的恢复对照（CPU，额外耗时和内存）：
+
+```powershell
+.\.venv\Scripts\python.exe run_pruning_recovery.py --run-dir $research.FullName --offline
+```
+
+幅度剪枝与二阶补偿剪枝均使用 50 步、相同学习率的干净教师 KL 恢复，固定零权重掩码，不向恢复过程提供秘密触发器。结果保存在 `pruning_recovery\<运行ID>\metrics.json`；退出 0 同样只代表测量完成。可追加相同的 `--model-path` 参数。
+
+退出码 `0` 仅表示报告中列出的 **improvement_gates（改进门槛）通过**；还须检查 `all_attacks_solved` 和每行结果。
+退出码 `2` 表示存在未通过的改进门槛，`3` 表示执行异常。不能把门槛通过改写成所有攻击均已解决。
+此入口的研究码本与原身份注册表分开；不要将研究输出目录传给旧版 `serve.py` 或 `verify_evidence.py`。
+原端到端托管/API 演示仍按下文 `run_demo.py` 的步骤执行。
+
+### 为完全离线 Windows 机器准备研究依赖和数据
+
+在相同 Python 3.12 / Windows x64 的联网准备机上，执行原文离线安装节的 PyTorch wheel 下载，再执行：
+
+```powershell
+.\.venv\Scripts\python.exe -m pip download --only-binary=:all: --dest .\wheelhouse -r requirements-research.txt
+.\.venv\Scripts\python.exe -c "from huggingface_hub import snapshot_download; snapshot_download('HuggingFaceTB/SmolLM2-135M', revision='93efa2f097d58c2a74874c7e644dbc9b0cee75a2', cache_dir='.cache/huggingface', allow_patterns=['*.json','model.safetensors','merges.txt','vocab.json'])"
+.\.venv\Scripts\python.exe -c "from huggingface_hub import snapshot_download; snapshot_download('Salesforce/wikitext', repo_type='dataset', revision='b08601e04326c79dfdd32d625aee71d232d685c3', cache_dir='.cache/huggingface', allow_patterns=['wikitext-2-raw-v1/*.parquet'])"
+```
+
+将源码、`wheelhouse` 和整个 `.cache\huggingface` 复制到离线 Windows 项目目录。若缓存使用符号链接，拷贝工具必须将链接目标的实际文件一起保留，不能只复制链接。不要拷贝 `.venv`。
+离线机创建 Python 3.12 虚拟环境后执行：
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --no-index --find-links .\wheelhouse torch==2.5.1 -r requirements-research.txt
+.\.venv\Scripts\python.exe run_robustness.py --device cpu --offline
+```
+
+代码和报告上传 GitHub；模型、数据缓存、wheelhouse 与生成适配器仍在本地准备，不上传大型文件或私有材料。
+
 ## Windows：从终端安装并运行
 
 建议 Windows 10/11 x64、**Python 3.11 或 3.12 x64**，至少 8 GB 内存（建议 16 GB），预留 6 GB 磁盘。CPU 可运行，实际耗时取决于处理器；首次需要联网下载约 270 MB 模型权重及 PyTorch。此交付的运行验证使用 Linux CPU，Windows 命令按跨平台接口提供，未声称已在 Windows 实测。
@@ -89,7 +210,7 @@ decrypted_model\      托管恢复后实际用于推理的权重与 tokenizer
 查看最近结果：
 
 ```powershell
-$run = Get-ChildItem .\outputs -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+$run = Get-ChildItem .\outputs -Directory | Where-Object { Test-Path (Join-Path $_.FullName "metrics.json") } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 Get-Content (Join-Path $run.FullName "DEMO_REPORT.md") -Encoding UTF8
 Get-Content (Join-Path $run.FullName "metrics.json") -Encoding UTF8
 ```
