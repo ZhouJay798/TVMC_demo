@@ -1,0 +1,10 @@
+.venv/
+.cache/
+__pycache__/
+.pytest_cache/
+outputs/
+*.pyc
+models/
+wheelhouse/
+.env
+.env.*

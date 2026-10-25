@@ -1,0 +1,7 @@
+baseline {'nll': 2.771674394607544, 'perplexity': 15.985377443806494, 'next_token_agreement': 1.0, 'tokens': 124}
+  LoRA step=200 loss=0.02391 cached_bit_accuracy=1.0000
+  LoRA step=400 loss=0.00309 cached_bit_accuracy=1.0000
+  LoRA step=600 loss=0.04668 cached_bit_accuracy=1.0000
+  LoRA step=800 loss=0.00372 cached_bit_accuracy=1.0000
+{'steps': 800, 'seconds': 0.4479682620000176, 'loss': 0.003719809465110302}
+accuracy 1.0 utility {'nll': 4.99680233001709, 'perplexity': 147.93934075972788, 'next_token_agreement': 0.6370967626571655, 'tokens': 124}

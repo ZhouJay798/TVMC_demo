@@ -1,0 +1,9 @@
+{
+  "health": {
+    "ready": true,
+    "one_shot_used": false
+  },
+  "actual_model_symbols": 256,
+  "matches_measured_transcript": true,
+  "second_request_status": 409
+}
