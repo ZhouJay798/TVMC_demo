@@ -1,5 +1,7 @@
 # TVMC 本地 Demo
 
+向老师汇报可直接阅读：[实验总览、问题原因、前后对照与答辩问答](docs/EXPERIMENT_DEFENSE_GUIDE.md)。
+
 根据 `docs/TVMC_PAPER.md` 和 `docs/DEMO_PROMPT.md` 实现的 **Python 命令行研究 Demo**。默认用 HuggingFaceTB/SmolLM2-135M，无 GPU 自动使用 CPU。入口 `run_demo.py` 一条命令完成托管恢复、5 个用户的 LoRA 指纹、黑盒读出、Tardos 解码、身份裁决及攻击评估。
 
 **结果以实际输出为准，不能把“脚本完成”当作“安全目标全部达标”。** 原文的数值均为占位，本项目不会复用这些数值。严格单输入一次性盒无法给出 256 个码位；输入过滤和蒸馏也可能移除指纹，报告如实记录失败。
