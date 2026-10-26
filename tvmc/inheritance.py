@@ -1,0 +1,157 @@
+"""Experimental ordinary-output statistical fingerprint and distillation controls.
+
+Full-vocabulary LoRA, not a decoding wrapper. Near-tie is a teacher-target
+restriction inspired by arXiv:2610.04169, not a claim of universal robustness.
+The random-key test assumes registered innocent keys are independent of the
+suspect model. It does not establish causal ownership or coalition security.
+"""
+import hashlib
+import math
+import numpy as np
+import torch
+from torch import nn
+
+
+class FullHeadLoRA(nn.Module):
+    def __init__(self, base, rank=8):
+        super().__init__()
+        self.base=base
+        self.a=nn.Parameter(torch.empty(rank,base.in_features,device=base.weight.device))
+        self.b=nn.Parameter(torch.zeros(base.out_features,rank,device=base.weight.device))
+        self.scale=1 / rank
+        for p in base.parameters(): p.requires_grad_(False)
+        self.reset()
+
+    def reset(self,seed=20261026):
+        g=torch.Generator(device=self.a.device).manual_seed(seed)
+        with torch.no_grad():
+            self.a.normal_(0,.02,generator=g);self.b.zero_()
+
+    def delta(self,h):return (h@self.a.T)@self.b.T*self.scale
+    def forward(self,h):return self.base(h)+self.delta(h)
+    def snapshot(self):return {k:getattr(self,k).detach().clone() for k in ('a','b')}
+    def restore(self,state):
+        with torch.no_grad():
+            for k in ('a','b'):getattr(self,k).copy_(state[k])
+    def merged_weight(self):return self.base.weight.detach()+self.b.detach()@self.a.detach()*self.scale
+
+
+def key_vector(vocab,seed):
+    # Public reproducibility seeds in this research demo, not deployment secrets.
+    return (2*np.random.default_rng(seed).integers(0,2,vocab,dtype=np.int8)-1).astype(np.float32)
+
+
+@torch.no_grad()
+def cache_features(lab,texts,length=64,positions_per_document=None):
+    hs,labels=[],[]
+    for start in range(0,len(texts),4):
+        inputs=lab._tokenize(texts[start:start+4],length)
+        hidden=lab.model.model(**inputs,use_cache=False).last_hidden_state[:,:-1]
+        mask=inputs['attention_mask'][:,1:].bool()
+        y=inputs['input_ids'][:,1:]
+        for i in range(len(hidden)):
+            h=hidden[i][mask[i]];target=y[i][mask[i]]
+            if positions_per_document and len(h)>positions_per_document:
+                idx=torch.linspace(0,len(h)-1,positions_per_document,device=h.device).long()
+                h=h[idx];target=target[idx]
+            hs.append(h.cpu());labels.append(target.cpu())
+    return {'h':torch.cat(hs),'labels':torch.cat(labels),'documents':len(texts)}
+
+
+@torch.no_grad()
+def evaluate(lab,cache):
+    nll=0.;agree=0;count=0
+    vocab=lab.head.base.out_features
+    delta=torch.zeros(vocab,dtype=torch.float64)
+    frequency=torch.zeros(vocab,dtype=torch.float64)
+    for i in range(0,len(cache['h']),32):
+        h=cache['h'][i:i+32].to(lab.device);y=cache['labels'][i:i+32].to(lab.device)
+        base=lab.head.base(h).float();logits=lab.head(h).float()
+        nll+=float(nn.functional.cross_entropy(logits,y,reduction='sum'))
+        agree+=int((logits.argmax(-1)==base.argmax(-1)).sum());count+=len(y)
+        delta+=(logits.softmax(-1)-base.softmax(-1)).double().sum(0).cpu()
+        frequency+=base.softmax(-1).double().sum(0).cpu()
+    return {'perplexity':math.exp(nll/count),'nll':nll/count,'tokens':count,
+            'next_token_agreement':agree/count},((delta/count)/(frequency/count+1e-5).sqrt()).numpy()
+
+
+def detect(drift,registered_seeds,decoys=2047):
+    """One-sided Monte Carlo random-key p-values, Bonferroni over registered IDs.
+
+    Ties count against detection. Query/text selection must not depend on the
+    secret key, and duplicate independent samples are not assumed here: each
+    score is a single aggregate vector tested against random keys.
+    """
+    drift=np.asarray(drift,dtype=np.float64)
+    scores=np.array([key_vector(len(drift),s)@drift for s in registered_seeds])
+    exceed=np.zeros(len(scores),dtype=np.int64)
+    rng=np.random.default_rng(842109)
+    for start in range(0,decoys,64):
+        k=(2*rng.integers(0,2,(min(64,decoys-start),len(drift)),dtype=np.int8)-1).astype(np.float64)
+        null=k@drift
+        exceed+=(null[:,None]>=scores[None,:]).sum(0)
+    p=(1+exceed)/(decoys+1)
+    return {'scores':scores.tolist(),'p_values':p.tolist(),'decoded_users':(np.flatnonzero(p<=.01/len(scores))+1).tolist(),
+            'familywise_alpha':.01,'per_key_alpha':.01/len(scores),'decoys':decoys,
+            'scope':'full-vocabulary logprob interface; ordinary held-out contexts; clean-base centering and sqrt-frequency whitening (floor 1e-5); random independent-key null'}
+
+
+def train(lab,cache,mode,steps=500,teacher=None,strength=0.,key=None,near_tie=None,seed=3301,clean_kl=1.):
+    """Attacker modes receive teacher responses, never the private watermark key."""
+    if mode not in ('embed','soft','hard_utility','generated_utility','clean_utility'):raise ValueError(mode)
+    lab.head.reset(seed)
+    opt=torch.optim.Adam([lab.head.a,lab.head.b],lr=.01)
+    g=torch.Generator().manual_seed(seed+1)
+    losses=[]
+    for step in range(steps):
+        idx=torch.randint(len(cache['h']),(64,),generator=g)
+        h=cache['h'][idx].to(lab.device)
+        with torch.no_grad():
+            base=lab.head.base(h).float();clean_p=base.softmax(-1)
+            if mode=='embed':
+                bias=key[None,:].expand_as(base)
+                if near_tie is not None:bias=bias*(base.max(-1,keepdim=True).values-base<=near_tie)
+                target=(base+strength*bias).softmax(-1)
+                # Explicit equal-weight clean KL; target mixture is equivalent
+                # up to a student-independent constant.
+                target=(target+clean_p)/2
+            elif mode in ('soft','hard_utility'):
+                tbase=base+((h@teacher['a'].T)@teacher['b'].T)*lab.head.scale
+                target=tbase.softmax(-1) if mode=='soft' else tbase.argmax(-1)
+            else:target=cache['labels'][idx].to(lab.device)
+        opt.zero_grad(set_to_none=True)
+        logits=base+lab.head.delta(h)
+        if mode in ('embed','soft'):
+            loss=nn.functional.kl_div(logits.log_softmax(-1),target,reduction='batchmean')
+        else:
+            loss=nn.functional.cross_entropy(logits,target)+clean_kl*nn.functional.kl_div(logits.log_softmax(-1),clean_p,reduction='batchmean')
+        loss.backward();opt.step()
+        if step%100==0 or step==steps-1:losses.append({'step':step+1,'loss':float(loss.detach())})
+    return {'mode':mode,'steps':steps,'batch_positions':64,'learning_rate':.01,'losses':losses,
+            'clean_KL_coefficient':1. if mode=='embed' else clean_kl if mode in ('hard_utility','generated_utility','clean_utility') else 0.,
+            'training_positions':len(cache['h']),'seed':seed}
+
+
+@torch.no_grad()
+def generated_training(lab,texts,new_tokens=32,seed=4501):
+    """Actual autoregressive teacher samples; ordinary prompts, no secret probes.
+
+    Fixed 16-token prefixes, temperature 1, full-vocabulary multinomial sampling.
+    Save generated continuation features/labels for same frozen-backbone students.
+    """
+    hs,ys,records=[],[],[]
+    g=torch.Generator(device=lab.device).manual_seed(seed)
+    for start in range(0,len(texts),4):
+        rows=[lab.tokenizer.encode(t,add_special_tokens=False)[:16] for t in texts[start:start+4]]
+        if any(len(r)!=16 for r in rows):raise ValueError('generation prefixes need 16 tokens')
+        ids=torch.tensor(rows,device=lab.device);past=None;generated=[]
+        for step in range(new_tokens):
+            result=lab.model.model(input_ids=ids,past_key_values=past,use_cache=True)
+            past=result.past_key_values;h=result.last_hidden_state[:,-1]
+            p=lab.head(h).float().softmax(-1)
+            token=torch.multinomial(p,1,generator=g).squeeze(1)
+            hs.append(h.cpu());ys.append(token.cpu());generated.append(token.cpu())
+            ids=token[:,None]
+        sequences=torch.stack(generated,1)
+        records.extend([{'prompt_token_ids':r,'completion_token_ids':c.tolist()} for r,c in zip(rows,sequences)])
+    return {'h':torch.cat(hs),'labels':torch.cat(ys),'documents':len(texts)},records

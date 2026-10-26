@@ -1,0 +1,26 @@
+from pathlib import Path
+import json,torch
+from tvmc.model import ModelLab
+from tvmc.robustness import corpus,utility_result
+from tvmc.inheritance import FullHeadLoRA,cache_features,evaluate,detect,train,generated_training
+out=Path('outputs/inheritance_pilot')
+lab=ModelLab('outputs/20261025T061854Z-734e2e/decrypted_model',Path('.cache/huggingface'),'cpu',4,True)
+lab.head=FullHeadLoRA(lab.head.base,8);lab.model.lm_head=lab.head
+seeds=[60101,60202,60303,60404,60505]
+data=corpus(Path('.cache/huggingface'),True,192)
+att=cache_features(lab,data['distillation'],64,32);val=cache_features(lab,data['validation'],96)
+base,_=evaluate(lab,val);results={}
+for name in ['near_tie_0.5','dense_0.5','near_tie_1.0']:
+ path=out/f'{name}.pt'
+ if not path.exists():continue
+ teacher=torch.load(path,weights_only=True);results[name]={}
+ lab.head.restore(teacher);gen,records=generated_training(lab,data['distillation'],32)
+ torch.save(gen,out/f'{name}_generated_cache.pt')
+ (out/f'{name}_generated_tokens.json').write_text(json.dumps(records))
+ for mode,cache in [('hard_utility',att),('generated_utility',gen)]:
+  print('ATTACK',name,mode,'KL10',flush=True)
+  training=train(lab,cache,mode,500,teacher=teacher,clean_kl=10.)
+  u,d=evaluate(lab,val);row={'training':training,'utility':utility_result(u,base),'detection':detect(d,seeds)}
+  results[name][mode]=row;print('RESULT',json.dumps(row),flush=True)
+  (out/'utility_controls.json').write_text(json.dumps(results,indent=2))
+print('DONE',flush=True)

@@ -1,0 +1,176 @@
+"""Ordinary-output fingerprint candidates and matched full-head student attacks.
+
+Exit 0 means measured gates passed for this finite suite, not a security proof.
+New interface needs full vocabulary log probabilities and the public clean base.
+The existing trigger/Tardos pipeline is retained as a separate baseline.
+"""
+import argparse
+import contextlib
+import hashlib
+import json
+import os
+from pathlib import Path
+import sys
+import time
+import traceback
+from datetime import datetime,timezone
+from uuid import uuid4
+from run_demo import Tee
+
+CANDIDATES=[('near_tie_0.5',.5,2.),('dense_0.5',.5,None),('near_tie_1.0',1.,2.)]
+SEEDS=[60101,60202,60303,60404,60505]
+ATTACKS=[('soft',12,0.),('soft',500,0.),('hard_utility',500,1.),('hard_utility',500,10.),
+         ('generated_utility',500,1.),('generated_utility',500,10.)]
+
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--model-path',type=Path)
+    p.add_argument('--offline',action='store_true')
+    p.add_argument('--threads',type=int,default=4)
+    p.add_argument('--development-dir',type=Path,help='reuse validated development measurements and teacher checkpoints')
+    p.add_argument('--output',type=Path,default=Path('outputs/distillation_research'))
+    args=p.parse_args()
+    root=Path(__file__).resolve().parent;cache=root/'.cache/huggingface'
+    os.environ.setdefault('HF_HOME',str(cache))
+    run_id=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+uuid4().hex[:6]
+    out=args.output/run_id;out.mkdir(parents=True)
+    m={'run_id':run_id,'status':'running','candidates':[],'final':{},'negative_controls':{},
+       'protocol':{'candidates':CANDIDATES,'registered_key_seeds':SEEDS,'attacks':ATTACKS,
+       'selection':'Among candidates that locate user 1 for all attacks, minimize worst validation PPL increase on teacher, soft12/500, hard-KL10 and generated-KL10. If none, record failure and select highest hit count, then lower PPL.',
+       'ppl_goal':.10,'agreement_diagnostic':.90,'test_offset':192,
+       'limits':'same public base; frozen backbone; full-output-head LoRA; logprob detector; no coalition/Judge guarantee'}}
+    m['source_sha256']={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in ['run_distillation_research.py','tvmc/inheritance.py','tvmc/robustness.py','tvmc/model.py']}
+    def save():(out/'metrics.json').write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+    code=3;started=time.perf_counter()
+    with (out/'demo_output.log').open('w',encoding='utf-8',buffering=1) as log:
+      with contextlib.redirect_stdout(Tee(sys.stdout,log)),contextlib.redirect_stderr(Tee(sys.stderr,log)):
+        try:
+            import torch
+            import numpy as np
+            from huggingface_hub import snapshot_download
+            from tvmc.model import ModelLab,MODEL_ID,HeadLoRA
+            from tvmc.robustness import (corpus,utility_result,MODEL_REVISION,natural_triggers,
+                 embed_natural,training_cache,margins,aggregate)
+            from tvmc.tardos import Tardos
+            from tvmc.inheritance import FullHeadLoRA,cache_features,evaluate,detect,key_vector,train,generated_training
+            source=args.model_path or Path(snapshot_download(MODEL_ID,revision=MODEL_REVISION,cache_dir=str(cache),local_files_only=args.offline,allow_patterns=['*.json','model.safetensors','merges.txt','vocab.json']))
+            m['model']={'id':MODEL_ID,'revision':MODEL_REVISION,'sha256':hashlib.sha256((source/'model.safetensors').read_bytes()).hexdigest()}
+            lab=ModelLab(str(source),cache,'cpu',args.threads,True)
+            lab.head=FullHeadLoRA(lab.head.base,8);lab.model.lm_head=lab.head
+            data=corpus(cache,args.offline,192)
+            m['data_hashes']={k:[hashlib.sha256(x.encode()).hexdigest() for x in v] for k,v in data.items()}
+            m['runtime']={'python':sys.version,'torch':torch.__version__,'device':'cpu','threads':args.threads}
+            print('Run',run_id,'caching independent ordinary text contexts',flush=True)
+            cal=cache_features(lab,data['calibration'],64,16)
+            attack_cache=cache_features(lab,data['distillation'],64,32)
+            val=cache_features(lab,data['validation'],96)
+            base_val,_=evaluate(lab,val);m['clean_validation']=base_val
+            def measured(c,baseline,decoder=None):
+                u,d=evaluate(lab,c)
+                return {'utility':utility_result(u,baseline),'detection':decoder() if decoder else detect(d,SEEDS)}
+            def attacks(teacher,c,baseline,decoder=None,artifact_scope='development'):
+                lab.head.restore(teacher)
+                generated,records=generated_training(lab,data['distillation'],32)
+                rows={}
+                for mode,steps,kl in ATTACKS:
+                    name=f'{mode}/{steps}/kl{kl:g}'
+                    print('Attack',name,flush=True)
+                    training=train(lab,generated if mode=='generated_utility' else attack_cache,mode,steps,teacher=teacher,clean_kl=kl)
+                    torch.save(lab.head.snapshot(),out/f'{artifact_scope}_{mode}_{steps}_kl{kl:g}.pt')
+                    row={'training':training,**measured(c,baseline,decoder)}
+                    rows[name]=row;print('Measured',name,json.dumps(row),flush=True)
+                return rows,hashlib.sha256(json.dumps(records).encode()).hexdigest()
+            development_states={}
+            if args.development_dir:
+                manifest=json.loads((args.development_dir/'manifest.json').read_text())
+                if manifest['model_sha256']!=m['model']['sha256'] or manifest['data_hashes']!=m['data_hashes']:
+                    raise ValueError('development model/data mismatch')
+                if manifest['helper_sha256']!=m['source_sha256']['tvmc/inheritance.py']:
+                    raise ValueError('development helper version mismatch')
+                for name,sha in manifest['files'].items():
+                    if hashlib.sha256((args.development_dir/name).read_bytes()).hexdigest()!=sha:raise ValueError('development artifact hash mismatch: '+name)
+                m['development_reuse']=manifest
+                m['candidates']=json.loads((args.development_dir/'development.json').read_text())
+                for row in m['candidates']:
+                    development_states[row['name']]=torch.load(args.development_dir/(row['name']+'.pt'),weights_only=True)
+                print('Reusing development-only measurements; final test not yet evaluated',flush=True)
+            else:
+                for name,strength,near in CANDIDATES:
+                    print('Develop',name,flush=True)
+                    row={'name':name,'strength':strength,'near_tie':near}
+                    row['training']=train(lab,cal,'embed',500,strength=strength,key=torch.tensor(key_vector(lab.head.base.out_features,SEEDS[0])),near_tie=near)
+                    teacher=lab.head.snapshot();development_states[name]=teacher
+                    torch.save(teacher,out/(name+'.pt'))
+                    row['teacher']=measured(val,base_val)
+                    row['attacks'],row['generated_token_sha256']=attacks(teacher,val,base_val)
+                    m['candidates'].append(row);save()
+            def hits(row):return sum(v['detection']['decoded_users']==[1] for v in row['attacks'].values())
+            def utility_cost(row):
+                values=[row['teacher']['utility']['relative_perplexity_increase']]
+                values += [v['utility']['relative_perplexity_increase'] for k,v in row['attacks'].items() if k.startswith('soft/') or k.endswith('kl10')]
+                return max(values)
+            selected=min(m['candidates'],key=lambda r:(-hits(r),utility_cost(r)))
+            m['selection']={'name':selected['name'],'attack_hits':hits(selected),'total_attacks':len(ATTACKS),'validation_worst_ppl_increase':utility_cost(selected),'used_final_test':False}
+            print('LOCKED SELECTION',json.dumps(m['selection']),flush=True);save()
+            # Final documents have not been used for tuning or candidate selection.
+            final_cache=cache_features(lab,data['test'],96)
+            lab.head.reset();base_test,_=evaluate(lab,final_cache);m['clean_test']=base_test
+            m['negative_controls']['untrained_public_base']=measured(final_cache,base_test)
+            for kl in (1.,10.):
+                training=train(lab,attack_cache,'clean_utility',500,clean_kl=kl)
+                m['negative_controls'][f'ordinary_clean_text_kl{kl:g}']={'training':training,**measured(final_cache,base_test)}
+                print('Negative control',kl,json.dumps(m['negative_controls'][f'ordinary_clean_text_kl{kl:g}']),flush=True);save()
+            selected_teacher=development_states[selected['name']]
+            m['final']['users']=[]
+            for user in range(5):
+                if user==0:lab.head.restore(selected_teacher)
+                else:
+                    train(lab,cal,'embed',500,strength=selected['strength'],key=torch.tensor(key_vector(lab.head.base.out_features,SEEDS[user])),near_tie=selected['near_tie'])
+                torch.save(lab.head.snapshot(),out/f'statistical_user{user+1}.pt')
+                row={'user':user+1,**measured(final_cache,base_test)}
+                m['final']['users'].append(row);print('Final user',json.dumps(row),flush=True);save()
+            m['final']['attacks'],m['final']['generated_token_sha256']=attacks(selected_teacher,final_cache,base_test,artifact_scope='final')
+            save()
+            # Matched baseline: rebuild existing natural 3-trigger head, embed it
+            # into a full-head LoRA, then apply identical attacker/data/budgets.
+            full=lab.head;old=HeadLoRA(full.base,lab.token_ids,8)
+            lab.head=old;lab.model.lm_head=old
+            t=Tardos();words=np.asarray([t.encode(f'robust-user-{i+1}') for i in range(5)])
+            prompts=natural_triggers(lab,data['triggers'])
+            features=lab.features(prompts);reg=training_cache(lab,data['calibration'])
+            embed_natural(lab,features,np.repeat(words[0],3),reg)
+            state={'a':old.a.detach().clone(),'b':torch.zeros_like(full.b)}
+            state['b'][lab.token_ids]=old.b.detach()
+            lab.head=full;lab.model.lm_head=full;full.restore(state)
+            def old_decoder():
+                bits=aggregate(margins(lab,prompts),3)
+                return {'decoded_users':[int(i)+1 for i in t.decode(words,bits)],'bit_accuracy':float((bits==words[0]).mean()),'scope':'existing natural-trigger/Tardos decoder; threshold unchanged'}
+            m['baseline']={'teacher':measured(final_cache,base_test,old_decoder)}
+            m['baseline']['attacks'],m['baseline']['generated_token_sha256']=attacks(state,final_cache,base_test,old_decoder,artifact_scope='baseline')
+            # Additional changed student initialization; no retraining defender.
+            training=train(lab,attack_cache,'soft',12,teacher=selected_teacher,seed=7301)
+            m['final']['soft12_alternate_seed']={'training':training,**measured(final_cache,base_test)}
+            all_hits=all(x['detection']['decoded_users']==[1] for x in m['final']['attacks'].values())
+            # Focus requested by the user: previously failing short probability
+            # and utility-preserving top-1 distillation. Broader text-SFT failures
+            # stay visible and do not become a claim of universal robustness.
+            focused=[v for k,v in m['final']['attacks'].items() if k.startswith('soft/') or k=='hard_utility/500/kl10']
+            m['all_tested_distillations_locate']=all_hits
+            m['gates']={'teacher_identities':all(x['detection']['decoded_users']==[x['user']] for x in m['final']['users']),
+                'focused_distillations_locate':all(x['detection']['decoded_users']==[1] for x in focused),
+                'teacher_ppl_within_10pct':all(x['utility']['relative_perplexity_increase']<=.10 for x in m['final']['users']),
+                'focused_attacks_ppl_within_10pct':all(x['utility']['relative_perplexity_increase']<=.10 for x in focused),
+                'negative_controls_not_accused':all(not x['detection']['decoded_users'] for x in m['negative_controls'].values()),
+                'alternate_seed_locates':m['final']['soft12_alternate_seed']['detection']['decoded_users']==[1]}
+            code=0 if all(m['gates'].values()) else 2
+            m['status']='completed_gates_passed' if code==0 else 'completed_with_failed_gates'
+        except Exception as e:
+            traceback.print_exc();m.update(status='error',error=f'{type(e).__name__}: {e}')
+        finally:
+            m['seconds']=time.perf_counter()-started;m['exit_code']=code;save()
+            print('FINAL',m['status'],out,flush=True)
+    return code
+
+
+if __name__=='__main__':raise SystemExit(main())

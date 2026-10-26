@@ -78,6 +78,22 @@ def test_transformers_offline_training_and_attacks(tmp_path):
         assert flags==[p.requires_grad for p in lab.model.parameters()]
     assert all(torch.equal(p,before[n]) for n,p in lab.model.model.named_parameters())
 
+    from tvmc.inheritance import FullHeadLoRA,cache_features,train,generated_training,evaluate
+    lab.head=FullHeadLoRA(lab.head.base,4);lab.model.lm_head=lab.head
+    ordinary=['The a is '*16,'a is The '*16]
+    fc=cache_features(lab,ordinary,24,4)
+    trained=train(lab,fc,'embed',2,strength=.5,key=torch.tensor([1.,-1.]*5),near_tie=2.)
+    assert np.isfinite(trained['losses'][-1]['loss'])
+    teacher=lab.head.snapshot()
+    generated,records=generated_training(lab,ordinary,3)
+    assert len(generated['h'])==len(generated['labels'])==6
+    assert len(records)==2 and all(len(r['completion_token_ids'])==3 for r in records)
+    for mode in ('soft','hard_utility','generated_utility','clean_utility'):
+        result=train(lab,generated if mode=='generated_utility' else fc,mode,2,teacher=teacher,clean_kl=10.)
+        assert np.isfinite(result['losses'][-1]['loss'])
+    measured,signature=evaluate(lab,fc)
+    assert np.isfinite(measured['perplexity']) and np.isfinite(signature).all()
+
 
 def test_filter_evaluates_allowed_inputs_only():
     import numpy as np

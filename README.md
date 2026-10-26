@@ -414,3 +414,19 @@ docs/                  用户提供的原文与提示词
 ```
 
 当前实例的实测摘要见 `VALIDATION.md`；三项原始产出见 `results/`（仅保留本次测量日志/指标/报告，不提交模型权重或私有份额）。
+
+## 蒸馏指纹新实验
+
+新增 `run_distillation_research.py`：比较三种普通输出统计指纹候选，用验证集选择后在新的测试文本上评估，并保留原自然触发指纹的配对对照。
+[实测结果与失败边界](results/distillation_20261026/DEMO_REPORT.md)。短程软概率及保持效用的硬标签蒸馏已改善；实际生成文本蒸馏仍可移除指纹，不是通用抗蒸馏方案。新检测需要完整词表概率和干净基座，不能直接替代旧 Tardos/Judge。
+
+Windows PowerShell（沿用 Python 3.12 虚拟环境与研究依赖）：
+
+```powershell
+git pull --ff-only
+.\.venv\Scripts\python.exe -m pip install --only-binary=:all: -r requirements-research.txt
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe run_distillation_research.py --offline
+```
+
+只有模型和 WikiText 缓存齐备时使用 `--offline`；独立模型目录可追加 `--model-path .\models\SmolLM2-135M`。CPU 运行可能需要数十分钟。结果在 `outputs\distillation_research\<运行ID>`，包括报告、CSV、指标和适配器。公开研究密钥种子仅用于复现，不能作为生产密钥。退出 0 仅表示报告中的重点门槛通过，仍需阅读生成文本蒸馏的失败结果。

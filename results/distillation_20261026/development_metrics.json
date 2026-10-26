@@ -1,0 +1,995 @@
+{
+  "clean_validation": {
+    "perplexity": 24.20075831526948,
+    "nll": 3.186383968013413,
+    "tokens": 5803,
+    "next_token_agreement": 1.0
+  },
+  "candidates": [
+    {
+      "name": "near_tie_0.5",
+      "strength": 0.5,
+      "near_tie": 2.0,
+      "attacks": {
+        "soft/12": {
+          "training": {
+            "mode": "soft",
+            "steps": 12,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 0.007378230802714825
+              },
+              {
+                "step": 12,
+                "loss": 0.00226691085845232
+              }
+            ],
+            "clean_KL_coefficient": 0.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 24.567420849109876,
+            "nll": 3.20142120947699,
+            "tokens": 5803,
+            "next_token_agreement": 0.9496811993796312,
+            "relative_perplexity_increase": 0.015150869615893514,
+            "utility_pass": true
+          },
+          "detection": {
+            "scores": [
+              0.8741284198524342,
+              -0.04503104166174624,
+              -0.039946180625384894,
+              -0.01416113590802027,
+              0.10700602330210844
+            ],
+            "p_values": [
+              0.00048828125,
+              0.7451171875,
+              0.71728515625,
+              0.57861328125,
+              0.06396484375
+            ],
+            "decoded_users": [
+              1
+            ],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        },
+        "soft/500": {
+          "training": {
+            "mode": "soft",
+            "steps": 500,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 0.007378230802714825
+              },
+              {
+                "step": 101,
+                "loss": 0.00063164415769279
+              },
+              {
+                "step": 201,
+                "loss": 0.0006865753093734384
+              },
+              {
+                "step": 301,
+                "loss": 0.00039275558083318174
+              },
+              {
+                "step": 401,
+                "loss": 0.0005849577719345689
+              },
+              {
+                "step": 500,
+                "loss": 0.016232263296842575
+              }
+            ],
+            "clean_KL_coefficient": 0.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 24.702052098291507,
+            "nll": 3.2068863210853946,
+            "tokens": 5803,
+            "next_token_agreement": 0.9312424607961399,
+            "relative_perplexity_increase": 0.020713970053811703,
+            "utility_pass": true
+          },
+          "detection": {
+            "scores": [
+              1.3461938356592558,
+              -0.07185683380745392,
+              -0.010081546963797162,
+              0.03400730275183439,
+              0.0853258479115596
+            ],
+            "p_values": [
+              0.00048828125,
+              0.79345703125,
+              0.54345703125,
+              0.341796875,
+              0.16064453125
+            ],
+            "decoded_users": [
+              1
+            ],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        },
+        "hard_utility/500": {
+          "training": {
+            "mode": "hard_utility",
+            "steps": 500,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 1.4495537281036377
+              },
+              {
+                "step": 101,
+                "loss": 1.1586018800735474
+              },
+              {
+                "step": 201,
+                "loss": 0.9811984300613403
+              },
+              {
+                "step": 301,
+                "loss": 0.9061222672462463
+              },
+              {
+                "step": 401,
+                "loss": 0.812124490737915
+              },
+              {
+                "step": 500,
+                "loss": 0.7773337960243225
+              }
+            ],
+            "clean_KL_coefficient": 1.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 28.638125265300552,
+            "nll": 3.3547388813361287,
+            "tokens": 5803,
+            "next_token_agreement": 0.7713251766327761,
+            "relative_perplexity_increase": 0.18335652512307088,
+            "utility_pass": false
+          },
+          "detection": {
+            "scores": [
+              0.8513169409961125,
+              -0.010504064000974866,
+              0.008818381067942596,
+              -0.06117857936904289,
+              0.4149554283027044
+            ],
+            "p_values": [
+              0.0107421875,
+              0.51806640625,
+              0.494140625,
+              0.57958984375,
+              0.13525390625
+            ],
+            "decoded_users": [],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        },
+        "generated_utility/500": {
+          "training": {
+            "mode": "generated_utility",
+            "steps": 500,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 4.129817008972168
+              },
+              {
+                "step": 101,
+                "loss": 3.1636176109313965
+              },
+              {
+                "step": 201,
+                "loss": 2.614013195037842
+              },
+              {
+                "step": 301,
+                "loss": 2.2793936729431152
+              },
+              {
+                "step": 401,
+                "loss": 2.562731981277466
+              },
+              {
+                "step": 500,
+                "loss": 2.0852174758911133
+              }
+            ],
+            "clean_KL_coefficient": 1.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 31.89182008634973,
+            "nll": 3.4623495532832393,
+            "tokens": 5803,
+            "next_token_agreement": 0.6858521454420128,
+            "relative_perplexity_increase": 0.3178025114290559,
+            "utility_pass": false
+          },
+          "detection": {
+            "scores": [
+              0.013427845068985575,
+              -0.3506105515340546,
+              0.095625064684275,
+              1.5697883660192626,
+              1.1748452381787795
+            ],
+            "p_values": [
+              0.4951171875,
+              0.65625,
+              0.45068359375,
+              0.0419921875,
+              0.09619140625
+            ],
+            "decoded_users": [],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        }
+      },
+      "training": {
+        "mode": "embed",
+        "steps": 500,
+        "batch_positions": 64,
+        "learning_rate": 0.01,
+        "losses": [
+          {
+            "step": 1,
+            "loss": 0.011952098459005356
+          },
+          {
+            "step": 101,
+            "loss": 0.0026266518980264664
+          },
+          {
+            "step": 201,
+            "loss": 0.0032722686883062124
+          },
+          {
+            "step": 301,
+            "loss": 0.0027567606884986162
+          },
+          {
+            "step": 401,
+            "loss": 0.0018988599767908454
+          },
+          {
+            "step": 500,
+            "loss": 0.0018427042523398995
+          }
+        ],
+        "clean_KL_coefficient": 1.0,
+        "training_positions": 2048,
+        "seed": 3301
+      },
+      "teacher": {
+        "utility": {
+          "perplexity": 24.7592230737466,
+          "nll": 3.209198069042447,
+          "tokens": 5803,
+          "next_token_agreement": 0.9298638635188695,
+          "relative_perplexity_increase": 0.023076333030637164,
+          "utility_pass": true
+        },
+        "detection": {
+          "scores": [
+            1.431893095011086,
+            -0.062275937407677444,
+            -0.01452926187443079,
+            0.04382387040219396,
+            0.09008324594071507
+          ],
+          "p_values": [
+            0.00048828125,
+            0.74853515625,
+            0.56298828125,
+            0.31396484375,
+            0.15869140625
+          ],
+          "decoded_users": [
+            1
+          ],
+          "familywise_alpha": 0.01,
+          "per_key_alpha": 0.002,
+          "decoys": 2047,
+          "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+        }
+      }
+    },
+    {
+      "name": "dense_0.5",
+      "strength": 0.5,
+      "near_tie": null,
+      "attacks": {
+        "soft/12": {
+          "training": {
+            "mode": "soft",
+            "steps": 12,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 0.019693924114108086
+              },
+              {
+                "step": 12,
+                "loss": 0.003978688735514879
+              }
+            ],
+            "clean_KL_coefficient": 0.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 24.746331961356493,
+            "nll": 3.2086772744499075,
+            "tokens": 5803,
+            "next_token_agreement": 0.9343443046699983,
+            "relative_perplexity_increase": 0.02254365912752343,
+            "utility_pass": true
+          },
+          "detection": {
+            "scores": [
+              8.877457170002018,
+              -0.034597039938605516,
+              -0.05826634842349131,
+              0.049126460434166117,
+              0.06993547058309302
+            ],
+            "p_values": [
+              0.00048828125,
+              0.6171875,
+              0.6923828125,
+              0.31103515625,
+              0.2529296875
+            ],
+            "decoded_users": [
+              1
+            ],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        },
+        "soft/500": {
+          "training": {
+            "mode": "soft",
+            "steps": 500,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 0.019693924114108086
+              },
+              {
+                "step": 101,
+                "loss": 0.00037171170697547495
+              },
+              {
+                "step": 201,
+                "loss": 0.000564216636121273
+              },
+              {
+                "step": 301,
+                "loss": 0.0006140425684861839
+              },
+              {
+                "step": 401,
+                "loss": 0.001927879173308611
+              },
+              {
+                "step": 500,
+                "loss": 0.005089535377919674
+              }
+            ],
+            "clean_KL_coefficient": 0.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 25.28590489081685,
+            "nll": 3.2302471215450086,
+            "tokens": 5803,
+            "next_token_agreement": 0.9038428399103912,
+            "relative_perplexity_increase": 0.04483936252785514,
+            "utility_pass": true
+          },
+          "detection": {
+            "scores": [
+              12.831788432025554,
+              -0.07950281526310747,
+              -0.12476458134963567,
+              0.016064149218969606,
+              0.2265572696870012
+            ],
+            "p_values": [
+              0.00048828125,
+              0.6796875,
+              0.76318359375,
+              0.4609375,
+              0.0888671875
+            ],
+            "decoded_users": [
+              1
+            ],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        },
+        "hard_utility/500": {
+          "training": {
+            "mode": "hard_utility",
+            "steps": 500,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 1.469408631324768
+              },
+              {
+                "step": 101,
+                "loss": 1.1439454555511475
+              },
+              {
+                "step": 201,
+                "loss": 1.0528758764266968
+              },
+              {
+                "step": 301,
+                "loss": 0.9146169424057007
+              },
+              {
+                "step": 401,
+                "loss": 0.8337109684944153
+              },
+              {
+                "step": 500,
+                "loss": 0.7826446294784546
+              }
+            ],
+            "clean_KL_coefficient": 1.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 28.58811179291555,
+            "nll": 3.35299095983405,
+            "tokens": 5803,
+            "next_token_agreement": 0.7682233327589179,
+            "relative_perplexity_increase": 0.18128991746832446,
+            "utility_pass": false
+          },
+          "detection": {
+            "scores": [
+              1.6308701173858742,
+              0.09846729185139282,
+              0.025662611318816874,
+              0.1552948786635599,
+              0.4271665383750348
+            ],
+            "p_values": [
+              0.00048828125,
+              0.3955078125,
+              0.48583984375,
+              0.33544921875,
+              0.12646484375
+            ],
+            "decoded_users": [
+              1
+            ],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        },
+        "generated_utility/500": {
+          "training": {
+            "mode": "generated_utility",
+            "steps": 500,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 3.6076743602752686
+              },
+              {
+                "step": 101,
+                "loss": 2.9706788063049316
+              },
+              {
+                "step": 201,
+                "loss": 2.5472381114959717
+              },
+              {
+                "step": 301,
+                "loss": 2.2303004264831543
+              },
+              {
+                "step": 401,
+                "loss": 2.617051124572754
+              },
+              {
+                "step": 500,
+                "loss": 2.064079761505127
+              }
+            ],
+            "clean_KL_coefficient": 1.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 32.87817765256773,
+            "nll": 3.492809144460023,
+            "tokens": 5803,
+            "next_token_agreement": 0.666896432879545,
+            "relative_perplexity_increase": 0.3585598114015802,
+            "utility_pass": false
+          },
+          "detection": {
+            "scores": [
+              2.135788368062417,
+              1.8859365360759663,
+              0.04390825606366927,
+              0.23813604958901358,
+              3.5180568370548366
+            ],
+            "p_values": [
+              0.0869140625,
+              0.1123046875,
+              0.49072265625,
+              0.4521484375,
+              0.00537109375
+            ],
+            "decoded_users": [],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        }
+      },
+      "training": {
+        "mode": "embed",
+        "steps": 500,
+        "batch_positions": 64,
+        "learning_rate": 0.01,
+        "losses": [
+          {
+            "step": 1,
+            "loss": 0.02306763082742691
+          },
+          {
+            "step": 101,
+            "loss": 0.000928248802665621
+          },
+          {
+            "step": 201,
+            "loss": 0.0015971801476553082
+          },
+          {
+            "step": 301,
+            "loss": 0.0007278828416019678
+          },
+          {
+            "step": 401,
+            "loss": 0.0011076456867158413
+          },
+          {
+            "step": 500,
+            "loss": 0.0004841992922592908
+          }
+        ],
+        "clean_KL_coefficient": 1.0,
+        "training_positions": 2048,
+        "seed": 3301
+      },
+      "teacher": {
+        "utility": {
+          "perplexity": 25.21697522595516,
+          "nll": 3.2275173878147956,
+          "tokens": 5803,
+          "next_token_agreement": 0.9088402550404963,
+          "relative_perplexity_increase": 0.04199111851980675,
+          "utility_pass": true
+        },
+        "detection": {
+          "scores": [
+            12.647088958762023,
+            -0.06972062169394272,
+            -0.08694759149712998,
+            0.08568112757812009,
+            0.16125245291308887
+          ],
+          "p_values": [
+            0.00048828125,
+            0.65869140625,
+            0.6982421875,
+            0.294921875,
+            0.16748046875
+          ],
+          "decoded_users": [
+            1
+          ],
+          "familywise_alpha": 0.01,
+          "per_key_alpha": 0.002,
+          "decoys": 2047,
+          "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+        }
+      }
+    },
+    {
+      "name": "near_tie_1.0",
+      "strength": 1.0,
+      "near_tie": 2.0,
+      "attacks": {
+        "soft/12": {
+          "training": {
+            "mode": "soft",
+            "steps": 12,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 0.021472662687301636
+              },
+              {
+                "step": 12,
+                "loss": 0.006148990243673325
+              }
+            ],
+            "clean_KL_coefficient": 0.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 24.87051707346508,
+            "nll": 3.2136830486512564,
+            "tokens": 5803,
+            "next_token_agreement": 0.9205583318972945,
+            "relative_perplexity_increase": 0.02767511453444893,
+            "utility_pass": true
+          },
+          "detection": {
+            "scores": [
+              1.3559228894149125,
+              -0.05100213591471942,
+              0.01021861975942747,
+              -0.011246523845729144,
+              0.10556804347486709
+            ],
+            "p_values": [
+              0.00048828125,
+              0.67236328125,
+              0.46826171875,
+              0.53564453125,
+              0.17236328125
+            ],
+            "decoded_users": [
+              1
+            ],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        },
+        "soft/500": {
+          "training": {
+            "mode": "soft",
+            "steps": 500,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 0.021472662687301636
+              },
+              {
+                "step": 101,
+                "loss": 0.0020482847467064857
+              },
+              {
+                "step": 201,
+                "loss": 0.0010325312614440918
+              },
+              {
+                "step": 301,
+                "loss": 0.0007997468346729875
+              },
+              {
+                "step": 401,
+                "loss": 0.0008006967836990952
+              },
+              {
+                "step": 500,
+                "loss": 0.0017631229711696506
+              }
+            ],
+            "clean_KL_coefficient": 0.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 25.347376591342197,
+            "nll": 3.2326752371609713,
+            "tokens": 5803,
+            "next_token_agreement": 0.8805790108564535,
+            "relative_perplexity_increase": 0.04737943584806015,
+            "utility_pass": false
+          },
+          "detection": {
+            "scores": [
+              2.4968936487514832,
+              -0.12147848485180059,
+              0.014639038628029509,
+              -0.021208841762927436,
+              0.0996383111345203
+            ],
+            "p_values": [
+              0.00048828125,
+              0.77099609375,
+              0.4658203125,
+              0.54541015625,
+              0.26220703125
+            ],
+            "decoded_users": [
+              1
+            ],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        },
+        "hard_utility/500": {
+          "training": {
+            "mode": "hard_utility",
+            "steps": 500,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 1.465384602546692
+              },
+              {
+                "step": 101,
+                "loss": 1.1211762428283691
+              },
+              {
+                "step": 201,
+                "loss": 0.9949849247932434
+              },
+              {
+                "step": 301,
+                "loss": 0.9278210401535034
+              },
+              {
+                "step": 401,
+                "loss": 0.87116539478302
+              },
+              {
+                "step": 500,
+                "loss": 0.7656228542327881
+              }
+            ],
+            "clean_KL_coefficient": 1.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 28.316758965373783,
+            "nll": 3.3434538189633107,
+            "tokens": 5803,
+            "next_token_agreement": 0.7659831121833535,
+            "relative_perplexity_increase": 0.17007734206028213,
+            "utility_pass": false
+          },
+          "detection": {
+            "scores": [
+              1.3767602803269197,
+              -0.22624854305846892,
+              0.018597328061865096,
+              -0.04079740445665462,
+              0.34373367777856556
+            ],
+            "p_values": [
+              0.00048828125,
+              0.736328125,
+              0.494140625,
+              0.5615234375,
+              0.18212890625
+            ],
+            "decoded_users": [
+              1
+            ],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        },
+        "generated_utility/500": {
+          "training": {
+            "mode": "generated_utility",
+            "steps": 500,
+            "batch_positions": 64,
+            "learning_rate": 0.01,
+            "losses": [
+              {
+                "step": 1,
+                "loss": 3.623727798461914
+              },
+              {
+                "step": 101,
+                "loss": 2.5770466327667236
+              },
+              {
+                "step": 201,
+                "loss": 2.4799001216888428
+              },
+              {
+                "step": 301,
+                "loss": 2.299356460571289
+              },
+              {
+                "step": 401,
+                "loss": 2.3864340782165527
+              },
+              {
+                "step": 500,
+                "loss": 2.2443063259124756
+              }
+            ],
+            "clean_KL_coefficient": 1.0,
+            "training_positions": 2048,
+            "seed": 3301
+          },
+          "utility": {
+            "perplexity": 32.96727877762404,
+            "nll": 3.495515517360195,
+            "tokens": 5803,
+            "next_token_agreement": 0.6715491986903326,
+            "relative_perplexity_increase": 0.362241560704456,
+            "utility_pass": false
+          },
+          "detection": {
+            "scores": [
+              -0.43977137302637725,
+              -0.5218847702913058,
+              0.4144849236950133,
+              -0.05078006796380938,
+              0.3716629670072049
+            ],
+            "p_values": [
+              0.6708984375,
+              0.69287109375,
+              0.34521484375,
+              0.51611328125,
+              0.361328125
+            ],
+            "decoded_users": [],
+            "familywise_alpha": 0.01,
+            "per_key_alpha": 0.002,
+            "decoys": 2047,
+            "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+          }
+        }
+      },
+      "training": {
+        "mode": "embed",
+        "steps": 500,
+        "batch_positions": 64,
+        "learning_rate": 0.01,
+        "losses": [
+          {
+            "step": 1,
+            "loss": 0.043921925127506256
+          },
+          {
+            "step": 101,
+            "loss": 0.01023024320602417
+          },
+          {
+            "step": 201,
+            "loss": 0.011765627190470695
+          },
+          {
+            "step": 301,
+            "loss": 0.008193421177566051
+          },
+          {
+            "step": 401,
+            "loss": 0.005972963757812977
+          },
+          {
+            "step": 500,
+            "loss": 0.006514268461614847
+          }
+        ],
+        "clean_KL_coefficient": 1.0,
+        "training_positions": 2048,
+        "seed": 3301
+      },
+      "teacher": {
+        "utility": {
+          "perplexity": 25.439720973300606,
+          "nll": 3.2363117703811355,
+          "tokens": 5803,
+          "next_token_agreement": 0.8764432190246424,
+          "relative_perplexity_increase": 0.051195199831792104,
+          "utility_pass": false
+        },
+        "detection": {
+          "scores": [
+            2.632268520208305,
+            -0.1212922213793309,
+            0.02618214644982531,
+            -0.01659193656739672,
+            0.16716366517230571
+          ],
+          "p_values": [
+            0.00048828125,
+            0.7685546875,
+            0.43408203125,
+            0.529296875,
+            0.15380859375
+          ],
+          "decoded_users": [
+            1
+          ],
+          "familywise_alpha": 0.01,
+          "per_key_alpha": 0.002,
+          "decoys": 2047,
+          "scope": "logprob interface; ordinary held-out contexts; public clean-base centering; random independent-key null"
+        }
+      }
+    }
+  ]
+}

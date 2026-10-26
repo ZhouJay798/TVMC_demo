@@ -1,0 +1,37 @@
+from pathlib import Path
+import json,torch,time
+from tvmc.model import ModelLab
+from tvmc.robustness import corpus,utility_result
+from tvmc.inheritance import FullHeadLoRA,cache_features,evaluate,detect,key_vector,train,generated_training
+out=Path('outputs/inheritance_pilot');out.mkdir(exist_ok=True)
+lab=ModelLab('outputs/20261025T061854Z-734e2e/decrypted_model',Path('.cache/huggingface'),'cpu',4,True)
+lab.head=FullHeadLoRA(lab.head.base,8);lab.model.lm_head=lab.head
+seeds=[60101,60202,60303,60404,60505]
+data=corpus(Path('.cache/huggingface'),True,192)
+print('Caching',flush=True)
+cal=cache_features(lab,data['calibration'],64,16)
+att=cache_features(lab,data['distillation'],64,32)
+val=cache_features(lab,data['validation'],96)
+base,_=evaluate(lab,val)
+print('BASE',base,flush=True)
+results=[]
+for name,strength,near in [('near_tie_0.5',.5,2.),('dense_0.5',.5,None),('near_tie_1.0',1.,2.)]:
+ row={'name':name,'strength':strength,'near_tie':near,'attacks':{}}
+ print('EMBED',name,flush=True)
+ row['training']=train(lab,cal,'embed',500,strength=strength,key=torch.tensor(key_vector(lab.head.base.out_features,seeds[0])),near_tie=near)
+ teacher=lab.head.snapshot();torch.save(teacher,out/f'{name}.pt')
+ u,d=evaluate(lab,val);row['teacher']={'utility':utility_result(u,base),'detection':detect(d,seeds)}
+ print('TEACHER',json.dumps(row['teacher']),flush=True)
+ for mode,steps in [('soft',12),('soft',500),('hard_utility',500)]:
+  print('ATTACK',mode,steps,flush=True)
+  training=train(lab,att,mode,steps,teacher=teacher)
+  u,d=evaluate(lab,val);a={'training':training,'utility':utility_result(u,base),'detection':detect(d,seeds)}
+  row['attacks'][f'{mode}/{steps}']=a;print('RESULT',json.dumps(a),flush=True)
+ lab.head.restore(teacher)
+ print('GENERATING',flush=True)
+ gen,records=generated_training(lab,data['distillation'],32)
+ training=train(lab,gen,'generated_utility',500)
+ u,d=evaluate(lab,val);a={'training':training,'utility':utility_result(u,base),'detection':detect(d,seeds)}
+ row['attacks']['generated_utility/500']=a;print('RESULT generation',json.dumps(a),flush=True)
+ results.append(row);(out/'metrics.json').write_text(json.dumps({'clean_validation':base,'candidates':results},indent=2))
+print('DONE',flush=True)

@@ -1,0 +1,1 @@
+33 passed in 6.10s. Linux CPU. Numerical source snapshot retained; published runner additionally renders report/CSV. Final test offset 192 unused in selection. No universal distillation guarantee.
