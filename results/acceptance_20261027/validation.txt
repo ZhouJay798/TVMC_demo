@@ -1,0 +1,4 @@
+33 passed in 5.31s
+Independent verify_evidence: key_layer=true, deployment_layer=true, bridge_layer=true
+Fresh end-to-end and robustness training. Statistical fingerprint reuses verified development candidates, repeats final student training/evaluation and paired baseline.
+Linux CPU. Model/source/data evidence in individual metrics.

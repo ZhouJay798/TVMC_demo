@@ -1,5 +1,7 @@
 # TVMC 本地 Demo
 
+最新完整复跑：[论文思路与 Demo 目标逐项验收（2026-10-27）](results/acceptance_20261027/README.md)。基本追踪链路通过，严格单输入盒、生成文本蒸馏及研究模块的统一裁决集成仍未满足。
+
 向老师汇报可直接阅读：[实验总览、问题原因、前后对照与答辩问答](docs/EXPERIMENT_DEFENSE_GUIDE.md)。
 
 根据 `docs/TVMC_PAPER.md` 和 `docs/DEMO_PROMPT.md` 实现的 **Python 命令行研究 Demo**。默认用 HuggingFaceTB/SmolLM2-135M，无 GPU 自动使用 CPU。入口 `run_demo.py` 一条命令完成托管恢复、5 个用户的 LoRA 指纹、黑盒读出、Tardos 解码、身份裁决及攻击评估。
