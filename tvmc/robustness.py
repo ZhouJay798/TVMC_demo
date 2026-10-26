@@ -224,6 +224,24 @@ def aggregate(values,redundancy=3):
     bits[counts==0]=-1
     return bits
 
+
+def filtered_observation(predict_margins, prompts, keep, redundancy=3):
+    """Only allowed requests reach fingerprint inference; rejected slots abstain.
+
+    A filter may itself score inputs (e.g. NLL). Those scores are not watermark
+    responses and are never passed to the decoder.
+    """
+    keep=np.asarray(keep,dtype=bool)
+    if keep.shape!=(len(prompts),) or len(prompts)%redundancy:
+        raise ValueError('filter mask or redundancy does not match prompts')
+    values=np.full(len(prompts),np.nan)
+    if keep.any():
+        predictions=np.asarray(predict_margins([p for p,k in zip(prompts,keep) if k]),dtype=float)
+        if predictions.shape!=(int(keep.sum()),) or not np.isfinite(predictions).all():
+            raise ValueError('invalid allowed-request margins')
+        values[keep]=predictions
+    return aggregate(values,redundancy)
+
 @torch.no_grad()
 def training_cache(lab, texts):
     """Frozen features plus sufficient statistics for exact full-vocabulary KL.

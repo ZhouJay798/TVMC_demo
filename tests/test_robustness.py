@@ -42,6 +42,20 @@ def test_soft_aggregation_erasure_not_zero_vote():
     with pytest.raises(ValueError):aggregate([1,2],3)
 
 
+def test_filtered_observation_never_queries_rejected_inputs():
+    from tvmc.robustness import filtered_observation
+    calls=[]
+    def predict(prompts):
+        calls.extend(prompts)
+        return [2.,-1.]
+    bits=filtered_observation(predict,['a','b','c','d','e','f'],[True,False,True,False,False,False])
+    assert calls==['a','c']
+    assert bits.tolist()==[1,-1]
+    calls.clear()
+    assert filtered_observation(predict,['secret']*3,[False]*3).tolist()==[-1]
+    assert calls==[]
+
+
 def test_compression_restores_after_exception():
     from types import SimpleNamespace
     model=torch.nn.Sequential(torch.nn.Linear(32,32,bias=False))

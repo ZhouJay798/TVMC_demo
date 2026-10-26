@@ -55,7 +55,7 @@ def main():
             from tvmc.tardos import Tardos
             from tvmc.robustness import (corpus,utility,utility_result,hessians,compressed,
                  natural_triggers,margins,aggregate,training_cache,embed_natural,
-                 student_distillation,input_nll,MODEL_REVISION,DATA_REVISION)
+                 student_distillation,input_nll,filtered_observation,MODEL_REVISION,DATA_REVISION)
             print('Research run',run_id,flush=True)
             source=args.model_path or Path(snapshot_download(MODEL_ID,revision=MODEL_REVISION,
                 cache_dir=str(args.cache),local_files_only=args.offline,
@@ -139,26 +139,30 @@ def main():
                 cutoff=float(np.quantile(input_nll(lab,data['calibration']),.95))
                 prompt_nll=input_nll(lab,prompts)
                 clean_nll=input_nll(lab,data['test'])
-                values=margins(lab,prompts)
                 for filter_name in ('prefix','adaptive_nll','rewrite'):
                     if filter_name=='prefix':
                         keep=np.array([not x.startswith('TVMC probe') for x in prompts])
-                        y=aggregate(np.where(keep,values,np.nan),r); clean_reject=0.
+                        y=filtered_observation(lambda xs:margins(lab,xs),prompts,keep,r); clean_reject=0.
                     elif filter_name=='adaptive_nll':
                         keep=prompt_nll<=cutoff
-                        y=aggregate(np.where(keep,values,np.nan),r)
+                        y=filtered_observation(lambda xs:margins(lab,xs),prompts,keep,r)
                         clean_reject=float(np.mean(clean_nll>cutoff))
                     else:
                         # An attacker may normalize all prompts; no secret-code-aware rewrite.
                         rewritten=[' '.join(x.lower().split()) for x in prompts]
                         y=observation(rewritten,r); keep=np.ones(len(prompts),dtype=bool); clean_reject=0.
                     metrics['filtering'][f'{profile}/{filter_name}']=dict(assess(y),
-                         threshold=cutoff,trigger_rejection_rate=float(1-keep.mean()),
+                         threshold=cutoff if filter_name=='adaptive_nll' else None,trigger_rejection_rate=float(1-keep.mean()),
                          clean_rejection_rate=clean_reject,requests=len(prompts),
-                         limitation='rewrite utility not scored as unchanged; input normalization changes the task')
+                         accepted_requests=int(keep.sum()),rejected_requests=int((~keep).sum()),
+                         observed_code_bits=int((y>=0).sum()),
+                         correct_code_bits=int((y==words[0]).sum()),
+                         normal_requests=len(data['test']),
+                         limitation='normal rejection measures availability; rewrite utility compares normalized text, not preserved semantics')
                     if filter_name=='rewrite':
                         rewrite_u,_=utility(lab,rewritten_test,rewritten_preds)
                         metrics['filtering'][f'{profile}/{filter_name}']['rewrite_utility']=utility_result(rewrite_u,rewritten_base)
+                    print('Filtering',profile,filter_name,json.dumps(metrics['filtering'][f'{profile}/{filter_name}']),flush=True); save()
                 for mode in ('soft','hard'):
                     lab.restore(states[profile][0])
                     training=student_distillation(lab,distill_cache,mode)

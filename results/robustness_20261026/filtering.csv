@@ -1,0 +1,7 @@
+﻿configuration,requests,accepted_requests,rejected_requests,observed_code_bits,correct_code_bits,normal_rejection_percent,decoded_users
+original/prefix,256,0,256,0,0,0.0,[]
+original/adaptive_nll,256,0,256,0,0,4.6875,[]
+original/rewrite,256,256,0,256,236,0.0,[1]
+natural_redundant/prefix,768,768,0,256,249,0.0,[1]
+natural_redundant/adaptive_nll,768,662,106,236,229,3.125,[1]
+natural_redundant/rewrite,768,768,0,256,235,0.0,[1]

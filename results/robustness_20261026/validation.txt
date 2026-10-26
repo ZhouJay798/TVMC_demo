@@ -1,0 +1,9 @@
+Linux CPU / Python 3.12
+30 passed in 4.77s
+pip check: No broken requirements found.
+Full benchmark exit 0; all improvement gates passed; all_attacks_solved=false.
+Verified same model and all dataset hashes as previous run.
+Verified source hashes match executed numerical code.
+Verified old prefix/NLL fail, new prefix/NLL locate user 1; filter accounting consistent.
+Report PPL formatting checked against archived measured values.
+Windows commands provided; Windows execution not tested.
