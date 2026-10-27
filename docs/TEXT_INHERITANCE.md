@@ -37,3 +37,13 @@ git pull --ff-only
 ```
 
 模型和 WikiText-2 缓存完整后可加 `--offline`。GitHub 仅含代码、文本实验记录，不包含大模型和 `.pt` 检查点。使用既有研究依赖，无新依赖。CPU 运行需等待，阶段日志打印在终端，指标保存在输出目录的 `metrics.json`，生成 token ID 保存在 `text_*.json`。
+
+## 固定参数的多随机种子配对复测
+
+使用 `run_text_repeats.py` 新增五组实验，不搜索强度、不更改阈值。生成种子4502–4506、学生种子3302–3306；每组原方式与0.2偏置方式共享种子。此前4501/3301单次结果不计入五组统计。固定用户1、原64段提示和offset256评估集，验证的是随机种子变化下的表现，不代表多用户或跨数据泛化。
+
+```powershell
+.\.venv\Scripts\python.exe run_text_repeats.py --model-path ".\outputs\你的原始运行目录\decrypted_model" --teacher ".\outputs\distillation_research\运行编号\statistical_user1.pt" --output ".\outputs\text_repeats_local"
+```
+
+缓存完整可加 `--offline`。每组约需数分钟，阶段输出在终端；统计保存在输出目录 `metrics.json` 的 `summary`。原老师权重及分布固定，因此老师PPL测一次，不随生成随机种子变化；学生PPL报告均值、样本标准差和范围。定位成功定义为只指认用户1，错误指认另计。
