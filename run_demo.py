@@ -52,6 +52,12 @@ def report(metrics, output):
              '最终读出总是重新运行完整模型。效用为 12 条固定留出文本的困惑度和下一词元一致率，'
              '通过标准预先固定为困惑度相对增加 ≤10% 且一致率 ≥90%；不是通用能力基准。', '',
              '## 密码学与码层', '', '| 检查 | 实测 |', '|---|---|']
+    if model.get('public_audit'):
+        lines += ['', '## 五用户公开裁决', '', '| 预期用户 | 定位用户 | 密钥层 | 部署层 | 桥接层 | 反例全部拒绝 |', '|---|---|---|---|---|---|']
+        for row in model['public_audit']:
+            v = row['verification']
+            lines.append(f"| {row['expected_user']} | {row['decoded_users']} | {v['key_layer']} | {v['deployment_layer']} | {v['bridge_layer']} | {all(row['negative_checks'].values())} |")
+        lines += ['', '各用户证据见 public_audit/user_N，可运行 verify_evidence.py 独立复核。身份仅指登记会话/接收用户。', '', '| 检查 | 实测 |', '|---|---|']
     for k,v in core.get('crypto', {}).items():
         if isinstance(v,bool):
             lines.append(f'| {k} | {"PASS" if v else "FAIL"} |')

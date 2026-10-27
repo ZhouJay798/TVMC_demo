@@ -1,5 +1,7 @@
 # TVMC 本地 Demo
 
+核心追踪最新结果：[五用户身份定位与公开裁决总表](results/tracing_audit_20261027/README.md)。新增5用户逐一证据导出和独立复核，全部通过；研究攻击模块尚未全部接入公开裁决。
+
 最新：[文字蒸馏五组配对复测](results/text_repeats_20261027/README.md)：原方式4/5、新方式5/5定位；样本很少，尚不能证明稳定成功率或显著优越性。
 
 新增可选实验：[实际生成文字指纹及对照结果](results/text_inheritance_20261027/README.md)。文字蒸馏后已测得定位成功，原评估集前三项蒸馏回归不变；老师输出 PPL 和新评估集稳定性尚未完全达标，未替换原默认方案。[Windows 操作](docs/TEXT_INHERITANCE.md)。

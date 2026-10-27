@@ -221,6 +221,10 @@ def model_experiment(args, state, output):
                    'status': 'passed' if accepted and 0 in decoded else 'failed',
                    'failure_layer': None if accepted and 0 in decoded else 'deployment_fingerprint'}
             (output/'public_evidence.json').write_text(json.dumps(ev, indent=2), encoding='utf-8')
+    from .public_audit import audit_releases
+    public_audit = audit_releases(lab, adapters, prompts, state, asset_hash, output)
+    progress['public_audit'] = public_audit
+    save_progress()
     # Actual coalition outputs from the five independently trained model adapters.
     model_pairs, rng = [], np.random.default_rng(2718)
     for a,b in itertools.combinations(range(5), 2):
@@ -291,7 +295,7 @@ def model_experiment(args, state, output):
             lab.restore(adapters[0])
     all_checks = (all(x['fully_readable'] and x['utility_pass'] for x in embeddings)
                   and all(x['hit'] and x['innocent_accused']==0 for x in model_pairs)
-                  and e2e['status']=='passed' and all(x['fingerprint_survives'] and x['utility_pass'] for x in attacks.values())
+                  and e2e['status']=='passed' and all(r['passed'] for r in public_audit) and all(x['fingerprint_survives'] and x['utility_pass'] for x in attacks.values())
                   and all(x['judge_accepted'] for x in protocols.values()))
     model_fpr = {'innocent_accusations': sum(x['innocent_accused'] for x in model_pairs),
                  'innocent_opportunities': 3*len(model_pairs),
@@ -303,4 +307,4 @@ def model_experiment(args, state, output):
             'resolved_revision': source.name if not args.model_path else 'local-path',
             'asset_sha256':asset_hash, 'device':lab.device, 'base_utility':base_utility,
             'embeddings':embeddings, 'protocols':protocols, 'model_coalitions':model_pairs,
-            'attacks':attacks, 'end_to_end':e2e, 'model_false_accusation': model_fpr}
+            'attacks':attacks, 'public_audit':public_audit, 'end_to_end':e2e, 'model_false_accusation': model_fpr}

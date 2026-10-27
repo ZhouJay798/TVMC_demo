@@ -1,0 +1,26 @@
+{
+  "expected_user": 3,
+  "decoded_users": [
+    3
+  ],
+  "session": "session-3",
+  "registered_consumer": 3,
+  "key_recovered": true,
+  "verification": {
+    "key_layer": true,
+    "deployment_layer": true,
+    "bridge_layer": true
+  },
+  "negative_checks": {
+    "wrong_user_1_deployment_rejected": true,
+    "wrong_user_2_deployment_rejected": true,
+    "wrong_user_4_deployment_rejected": true,
+    "wrong_user_5_deployment_rejected": true,
+    "edited_receipt_rejected": true,
+    "wrong_nonce_rejected": true,
+    "signed_single_input_rejected": true,
+    "second_request_rejected": true
+  },
+  "passed": true,
+  "scope": "registered session/consumer, not real-world identity or proof of who leaked"
+}

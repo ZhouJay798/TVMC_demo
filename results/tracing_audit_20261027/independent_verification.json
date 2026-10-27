@@ -1,0 +1,47 @@
+[
+  {
+    "user": 1,
+    "exit_code": 0,
+    "verification": {
+      "key_layer": true,
+      "deployment_layer": true,
+      "bridge_layer": true
+    }
+  },
+  {
+    "user": 2,
+    "exit_code": 0,
+    "verification": {
+      "key_layer": true,
+      "deployment_layer": true,
+      "bridge_layer": true
+    }
+  },
+  {
+    "user": 3,
+    "exit_code": 0,
+    "verification": {
+      "key_layer": true,
+      "deployment_layer": true,
+      "bridge_layer": true
+    }
+  },
+  {
+    "user": 4,
+    "exit_code": 0,
+    "verification": {
+      "key_layer": true,
+      "deployment_layer": true,
+      "bridge_layer": true
+    }
+  },
+  {
+    "user": 5,
+    "exit_code": 0,
+    "verification": {
+      "key_layer": true,
+      "deployment_layer": true,
+      "bridge_layer": true
+    }
+  }
+]
