@@ -86,6 +86,12 @@ def test_transformers_offline_training_and_attacks(tmp_path):
     assert np.isfinite(trained['losses'][-1]['loss'])
     teacher=lab.head.snapshot()
     generated,records=generated_training(lab,ordinary,3)
+    from tvmc.text_watermark import generate
+    unchanged, unchanged_records = generate(lab, ordinary, torch.tensor([1.,-1.]*5), 0., 3)
+    assert unchanged_records == records
+    assert torch.equal(unchanged['labels'], generated['labels'])
+    assert torch.equal(unchanged['h'], generated['h'])
+    assert all(torch.equal(lab.head.snapshot()[k], teacher[k]) for k in teacher)
     assert len(generated['h'])==len(generated['labels'])==6
     assert len(records)==2 and all(len(r['completion_token_ids'])==3 for r in records)
     for mode in ('soft','hard_utility','generated_utility','clean_utility'):

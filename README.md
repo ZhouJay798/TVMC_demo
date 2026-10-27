@@ -1,5 +1,7 @@
 # TVMC 本地 Demo
 
+新增可选实验：[实际生成文字指纹及对照结果](results/text_inheritance_20261027/README.md)。文字蒸馏后已测得定位成功，原评估集前三项蒸馏回归不变；老师输出 PPL 和新评估集稳定性尚未完全达标，未替换原默认方案。[Windows 操作](docs/TEXT_INHERITANCE.md)。
+
 最新完整复跑：[论文思路与 Demo 目标逐项验收（2026-10-27）](results/acceptance_20261027/README.md)。基本追踪链路通过，严格单输入盒、生成文本蒸馏及研究模块的统一裁决集成仍未满足。
 
 向老师汇报可直接阅读：[实验总览、问题原因、前后对照与答辩问答](docs/EXPERIMENT_DEFENSE_GUIDE.md)。

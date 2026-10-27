@@ -1,0 +1,75 @@
+"""Opt-in sampled-text watermark experiment; existing distillation entry unchanged."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import torch
+from tvmc.model import ModelLab
+from tvmc.robustness import corpus
+from tvmc.inheritance import FullHeadLoRA, cache_features, evaluate, detect, key_vector, train, generated_training
+from tvmc.text_watermark import generate, served_utility
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--model-path', type=Path, required=True)
+    p.add_argument('--teacher', type=Path, required=True)
+    p.add_argument('--output', type=Path, default=Path('outputs/text_inheritance'))
+    p.add_argument('--offline', action='store_true')
+    args = p.parse_args()
+    args.output.mkdir(parents=True, exist_ok=False)
+    cache = Path(__file__).resolve().parent/'.cache/huggingface'
+    lab = ModelLab(str(args.model_path), cache, 'cpu', 4, True)
+    lab.head = FullHeadLoRA(lab.head.base, 8); lab.model.lm_head = lab.head
+    data = corpus(cache, args.offline, 192)
+    cal = cache_features(lab, data['distillation'], 64, 32)
+    val = cache_features(lab, data['validation'], 96)
+    test = cache_features(lab, data['test'], 96)
+    base_val, _ = evaluate(lab, val); base_test, _ = evaluate(lab, test)
+    teacher = torch.load(args.teacher, map_location='cpu', weights_only=True)
+    seeds = [60101,60202,60303,60404,60505]
+    key = torch.tensor(key_vector(lab.head.base.out_features, seeds[0]))
+    m = {'protocol': {'strengths': [0., .5, 1.], 'generation_tokens': 2048,
+         'student_steps':500, 'student_clean_kl':10, 'selection':'validation detection of user 1 only, then lowest served teacher PPL; no test selection',
+         'scope':'generation wrapper, not weight-embedded robustness; existing teacher unchanged; probability-interface student detector',
+         'ppl_goal': .10}, 'base_test':base_test, 'development':[], 'regression':{},
+         'teacher_sha256':hashlib.sha256(args.teacher.read_bytes()).hexdigest(),
+         'data_hashes':{k:[hashlib.sha256(t.encode()).hexdigest() for t in v] for k,v in data.items()}}
+    def save():
+        (args.output/'metrics.json').write_text(json.dumps(m,indent=2)+'\n')
+    def measure(c, base):
+        u, drift = evaluate(lab,c)
+        return {'utility':u,'increase':u['perplexity']/base['perplexity']-1,'detection':detect(drift,seeds)}
+    states = {}
+    for strength in m['protocol']['strengths']:
+        print('Development strength',strength,flush=True)
+        lab.head.restore(teacher)
+        served = served_utility(lab,val,key,strength)
+        generated, records = generate(lab,data['distillation'],key,strength)
+        (args.output/f'text_{strength}.json').write_text(json.dumps(records))
+        train(lab,generated,'generated_utility',500,clean_kl=10)
+        states[strength] = lab.head.snapshot()
+        torch.save(states[strength],args.output/f'student_{strength}.pt')
+        m['development'].append({'strength':strength,'served_teacher':served,**measure(val,base_val)})
+        print(json.dumps(m['development'][-1]),flush=True);save()
+    eligible = [r for r in m['development'] if r['detection']['decoded_users']==[1]]
+    selected = min(eligible or m['development'],key=lambda r:r['served_teacher']['perplexity'])['strength']
+    m['selected_strength']=selected
+    lab.head.restore(states[0.]);m['baseline_test']=measure(test,base_test)
+    lab.head.restore(states[selected]);m['candidate_test']=measure(test,base_test)
+    lab.head.restore(teacher)
+    m['served_teacher_test']=served_utility(lab,test,key,selected)
+    m['served_teacher_increase']=m['served_teacher_test']['perplexity']/base_test['perplexity']-1
+    for mode,steps,kl in [('soft',12,0),('soft',500,0),('hard_utility',500,10)]:
+        print('Regression',mode,steps,flush=True)
+        train(lab,cal,mode,steps,teacher=teacher,clean_kl=kl)
+        m['regression'][f'{mode}/{steps}']=measure(test,base_test);save()
+    train(lab,cal,'clean_utility',500,clean_kl=10)
+    m['negative_control']=measure(test,base_test)
+    m['passed']=(m['candidate_test']['detection']['decoded_users']==[1]
+        and m['candidate_test']['increase']<=.10 and m['served_teacher_increase']<=.10
+        and all(r['detection']['decoded_users']==[1] and r['increase']<=.10 for r in m['regression'].values())
+        and m['negative_control']['detection']['decoded_users']==[])
+    save();print('Completed. Gates passed:',m['passed'],flush=True)
+
+if __name__=='__main__':main()
