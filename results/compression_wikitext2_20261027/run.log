@@ -1,0 +1,9 @@
+uncompressed clean {'nll': 3.6599151445499034, 'perplexity': 38.85804541449733, 'tokens': 6073, 'next_token_agreement': 1.0}
+uncompressed original_fingerprint {'nll': 3.8161428329992897, 'perplexity': 45.428644081382025, 'tokens': 6073, 'next_token_agreement': 1.0}
+uncompressed natural_redundant {'nll': 3.6752313808301085, 'perplexity': 39.45778557623537, 'tokens': 6073, 'next_token_agreement': 1.0}
+row_int8 clean {'nll': 3.6860171261050447, 'perplexity': 39.885670581849894, 'tokens': 6073, 'next_token_agreement': 1.0}
+row_int8 original_fingerprint {'nll': 3.8394489561571197, 'perplexity': 46.49984392597905, 'tokens': 6073, 'next_token_agreement': 1.0}
+row_int8 natural_redundant {'nll': 3.700922427844043, 'perplexity': 40.484631292879975, 'tokens': 6073, 'next_token_agreement': 1.0}
+magnitude30 clean {'nll': 4.302514837382163, 'perplexity': 73.88536994508398, 'tokens': 6073, 'next_token_agreement': 1.0}
+magnitude30 original_fingerprint {'nll': 4.505093887809001, 'perplexity': 90.47683832222394, 'tokens': 6073, 'next_token_agreement': 1.0}
+magnitude30 natural_redundant {'nll': 4.349712591047207, 'perplexity': 77.45619812107279, 'tokens': 6073, 'next_token_agreement': 1.0}
