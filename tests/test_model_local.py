@@ -94,6 +94,11 @@ def test_transformers_offline_training_and_attacks(tmp_path):
     assert all(torch.equal(lab.head.snapshot()[k], teacher[k]) for k in teacher)
     assert len(generated['h'])==len(generated['labels'])==6
     assert len(records)==2 and all(len(r['completion_token_ids'])==3 for r in records)
+    from run_integrated_trace import recache_student
+    recached = recache_student(lab, records)
+    assert recached['labels'].tolist() == [t for r in records for t in r['completion_token_ids']]
+    expected_h = generated['h'].reshape(3, 2, -1).transpose(0, 1).reshape(6, -1)
+    assert torch.allclose(recached['h'], expected_h, atol=1e-5)
     for mode in ('soft','hard_utility','generated_utility','clean_utility'):
         result=train(lab,generated if mode=='generated_utility' else fc,mode,2,teacher=teacher,clean_kl=10.)
         assert np.isfinite(result['losses'][-1]['loss'])

@@ -1,0 +1,29 @@
+{
+  "user": 1,
+  "session": "session-1",
+  "participants": [
+    1,
+    2
+  ],
+  "stage": "pruned_text",
+  "natural_decoded_users": [],
+  "natural_verification": {
+    "key_layer": true,
+    "deployment_layer": false,
+    "bridge_layer": false
+  },
+  "statistical_verification": {
+    "key_layer": true,
+    "statistical_deployment_layer": false,
+    "bridge_layer": false,
+    "scope": "research statistical attribution, not Tardos security",
+    "decoded_users": []
+  },
+  "utility": {
+    "perplexity": 37.47978490439799,
+    "nll": 3.6238017184102636,
+    "tokens": 5616,
+    "next_token_agreement": 0.8979700854700855
+  },
+  "ppl_increase": 0.030623418420596682
+}

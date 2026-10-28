@@ -1,0 +1,22 @@
+﻿user,stage,participants,natural_users,statistical_users,key_layer,natural_deployment,natural_bridge,statistical_deployment,statistical_bridge,ppl,ppl_increase
+1,natural,"[1, 2]",[1],[],True,True,True,False,False,36.894273336774724,0.014522954266708687
+2,natural,"[2, 3]",[2],[],True,True,True,False,False,36.685430961474346,0.008780182708862938
+3,natural,"[3, 4]",[3],[],True,True,True,False,False,36.6502147028483,0.007811801995319945
+4,natural,"[4, 5]",[4],[],True,True,True,False,False,36.613463871795815,0.006801223433417158
+5,natural,"[1, 5]",[5],[],True,True,True,False,False,36.6785373829429,0.008590622296780648
+1,pruned,"[1, 2]",[1],[],True,True,True,False,False,40.528002254626855,0.11444364827504283
+2,pruned,"[2, 3]",[2],[],True,True,True,False,False,40.29242343383933,0.1079656748766673
+3,pruned,"[3, 4]",[3],[],True,True,True,False,False,40.28027383007114,0.1076315836805739
+4,pruned,"[4, 5]",[4],[],True,True,True,False,False,40.23403440582408,0.10636008669613672
+5,pruned,"[1, 5]",[5],[],True,True,True,False,False,40.298193937145456,0.10812435283756106
+1,text,"[1, 2]",[],[],True,False,False,False,False,37.873456265751244,0.04144863860814829
+1,pruned_text,"[1, 2]",[],[],True,False,False,False,False,37.47978490439799,0.030623418420596682
+2,text,"[2, 3]",[],[],True,False,False,False,False,37.77164409284413,0.03864899581547987
+2,pruned_text,"[2, 3]",[],[],True,False,False,False,False,37.48484183176821,0.030762474388668304
+3,text,"[3, 4]",[],[],True,False,False,False,False,37.79166368862617,0.03919949695343772
+3,pruned_text,"[3, 4]",[],[],True,False,False,False,False,38.107661426903036,0.047888838956514856
+4,text,"[4, 5]",[],[],True,False,False,False,False,37.786205549114015,0.03904940840793025
+4,pruned_text,"[4, 5]",[],[],True,False,False,False,False,37.57216917067927,0.03316381155694881
+5,text,"[1, 5]",[],[],True,False,False,False,False,38.200236573853346,0.05043448095136838
+5,pruned_text,"[1, 5]",[],[],True,False,False,False,False,37.566561967251175,0.03300962403480634
+1,clean_negative,"[1, 2]",[],[],True,False,False,False,False,36.36612969830899,0.0
