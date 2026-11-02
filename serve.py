@@ -9,7 +9,7 @@ import numpy as np
 from tvmc.bridge import OneShotBox
 
 
-def make_server(predictor, host='127.0.0.1', port=8080):
+def make_server(predictor, host='127.0.0.1', port=8080, max_prompts=256, response_field='bits'):
     box = OneShotBox(predictor)
     lock = threading.Lock()
 
@@ -38,9 +38,9 @@ def make_server(predictor, host='127.0.0.1', port=8080):
                     raise ValueError('request must contain 1..131072 bytes')
                 data = json.loads(self.rfile.read(length))
                 prompts, protocol = data['prompts'], data.get('protocol','batch')
-                if (not isinstance(prompts,list) or not 1 <= len(prompts) <= 256 or
+                if (not isinstance(prompts,list) or not 1 <= len(prompts) <= max_prompts or
                     any(not isinstance(x,str) or len(x)>2048 for x in prompts)):
-                    raise ValueError('need 1..256 strings, each at most 2048 characters')
+                    raise ValueError(f'need 1..{max_prompts} strings, each at most 2048 characters')
                 if protocol not in ('batch','stream','single'):
                     raise ValueError('protocol must be batch, stream, or single')
             except (ValueError, KeyError, TypeError) as exc:
@@ -52,7 +52,7 @@ def make_server(predictor, host='127.0.0.1', port=8080):
                     return
                 try:
                     bits = box.query(prompts,protocol)
-                    self.reply(200, {'bits':np.asarray(bits).tolist(),'protocol':protocol,'requests_used':1})
+                    self.reply(200, {response_field:np.asarray(bits).tolist(),'protocol':protocol,'requests_used':1})
                 except Exception as exc:
                     import traceback
                     traceback.print_exc()

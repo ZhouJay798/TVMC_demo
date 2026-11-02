@@ -9,6 +9,7 @@ import numpy as np
 from .crypto import share_key, prove, recover, encrypt, decrypt, digest, verify_proof
 from .tardos import Tardos, collude, wilson
 from .bridge import Registry, Collector, OneShotBox, evidence_for, judge
+from .cross_session import session_leads
 
 
 def rejected(operation):
@@ -65,7 +66,9 @@ def core_experiment(length=256, trials=2000):
             y = collude(words[a], words[b], strategy, rng)
             decoded = tardos.decode(words, y)
             pairs.append({'coalition': [a+1, b+1], 'strategy': strategy,
-                          'decoded': [i+1 for i in decoded], 'hit': bool({a,b}&set(decoded)),
+                          'decoded': [i+1 for i in decoded],
+                          'session_leads': session_leads([records[i].sid for i in decoded], [asdict(r) for r in records]),
+                          'hit': bool({a,b}&set(decoded)),
                           'innocent_accused': len(set(decoded)-{a,b})})
     # Independent codebook per trial; thresholds are never tuned to results.
     false_count = innocent_count = scenario_false = hit_count = 0
@@ -232,6 +235,7 @@ def model_experiment(args, state, output):
             decoded = tardos.decode(words, collude(observed_words[a], observed_words[b], strategy, rng))
             model_pairs.append({'coalition':[a+1,b+1], 'strategy':strategy,
                                 'hit':bool(set(decoded)&{a,b}), 'decoded_users':[i+1 for i in decoded],
+                                'session_leads':session_leads([state['records'][i].sid for i in decoded], [asdict(r) for r in state['records']]),
                                 'innocent_accused':len(set(decoded)-{a,b})})
     attacks = {}
     progress.update(protocols=protocols, end_to_end=e2e, model_coalitions=model_pairs, attacks=attacks)

@@ -8,3 +8,6 @@ models/
 wheelhouse/
 .env
 .env.*
+
+# Local experiment state includes private custody secrets.
+work/
