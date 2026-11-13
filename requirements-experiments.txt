@@ -1,6 +1,0 @@
--r requirements-research.txt
-# Optional tools used by the local quantization and report experiments.
-gguf==0.19.0
-llama-cpp-python==0.3.36
-openpyxl==3.1.5
-python-docx==1.1.2

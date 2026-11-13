@@ -1,9 +1,8 @@
-"""Additive research backend for the new paper's threshold workflow.
+"""Research TDH2 hybrid and Pedersen/Feldman joint key-generation.
 
-Feldman joint key-generation simulation over the existing RFC3526 group.
-This is NOT the paper's malicious-secure Pedersen DKG or TDH2 implementation.
-No constant-time guarantee; all actors share a Python address space in this demo.
-Secret shares are never exported by the public transcript or combine operation.
+RFC3526 group14 (about 112-bit security), not the paper's ristretto255 backend.
+Python arithmetic is not constant time. Local DKG aborts on invalid shares;
+complaint recovery and distributed network liveness are not implemented.
 """
 from dataclasses import dataclass, field
 import hashlib
@@ -18,6 +17,25 @@ def point(v):
 
 def challenge(*items):
     return int(digest(['TVMC/paper-prototype/v1', *items]), 16) % Q
+
+
+def hash_to_group(label):
+    # Hash to a field element and square into the order-q subgroup. Never g^H(label),
+    # which would expose the discrete logarithm between Pedersen generators.
+    for counter in range(256):
+        value=int.from_bytes(hashlib.shake_256(label+bytes([counter])).digest(256),'big')%P
+        result=pow(value,2,P)
+        if 1<result<P:return result
+    raise ValueError('hash-to-group failed')
+
+GBAR=hash_to_group(b'TVMC/TDH2/gbar/v2')
+H_PEDERSEN=hash_to_group(b'TVMC/Pedersen/h/v2')
+
+
+def verify_vss(i,value,blinding,commitments,feldman=None):
+    if type(i) is not int or i<1 or not 0<=value<Q or not 0<=blinding<Q:return False
+    valid=pow(G,value,P)*pow(H_PEDERSEN,blinding,P)%P==evaluate(commitments,i)
+    return valid and (feldman is None or pow(G,value,P)==evaluate(feldman,i))
 
 
 def evaluate(commitments, i):
@@ -36,6 +54,7 @@ class ThresholdPublic:
     epoch: int
     purpose: str
     commitments: tuple
+    vss_transcript: tuple = ()
 
     @property
     def pk(self):
@@ -58,29 +77,32 @@ class SecretShare:
     value: int = field(repr=False)
 
 
-def joint_keygen(n=5, t=3, purpose='release', epoch=1):
-    """All dealers contribute independent polynomials; verify every delivered evaluation.
+def joint_keygen(n=5,t=3,purpose='release',epoch=1):
+    """Pedersen VSS commitments first, Feldman extraction second; abort on fault.
 
-    Local simulation: no authenticated network, complaints or disqualification.
-    Does not compute or return the aggregate constant term (complete private key).
+    Simulates authenticated private channels in one process. All contributions
+    enter the key; does not reconstruct the aggregate secret constant.
     """
-    if not 2 <= t <= n or n < 2*t-1:
-        raise ValueError('require 2 <= t <= n and n >= 2t-1')
-    totals = [0]*n
-    combined = [1]*t
-    for _ in range(n):
-        polynomial = [scalar() for _ in range(t)]
-        commitments = [pow(G, a, P) for a in polynomial]
-        for i in range(1, n+1):
-            piece = sum(a*pow(i, k, Q) for k, a in enumerate(polynomial)) % Q
-            if pow(G, piece, P) != evaluate(commitments, i):
-                raise ValueError('invalid dealer contribution')
-            totals[i-1] = (totals[i-1]+piece) % Q
-        combined = [a*b % P for a,b in zip(combined, commitments)]
-    public = ThresholdPublic(n,t,epoch,purpose,tuple(combined))
-    if public.pk == 1:
-        raise ValueError('degenerate public key; rerun key generation')
-    return public, [SecretShare(i,public.kid,s) for i,s in enumerate(totals,1)]
+    if not 2<=t<=n or n<2*t-1:raise ValueError('require 2 <= t and n >= 2t-1')
+    contributions=[];transcript=[]
+    for dealer in range(1,n+1):
+        a=[scalar() for _ in range(t)];b=[scalar() for _ in range(t)]
+        C=[pow(G,x,P)*pow(H_PEDERSEN,y,P)%P for x,y in zip(a,b)]
+        contributions.append((a,b,C))
+        transcript.append(dict(dealer=dealer,pedersen=C))
+    totals=[0]*n;combined=[1]*t
+    for dealer,(a,b,C) in enumerate(contributions):
+        A=[pow(G,x,P) for x in a]
+        for i in range(1,n+1):
+            value=sum(x*pow(i,k,Q) for k,x in enumerate(a))%Q
+            blind=sum(x*pow(i,k,Q) for k,x in enumerate(b))%Q
+            if not verify_vss(i,value,blind,C,A):raise ValueError('DKG invalid contribution; abort')
+            totals[i-1]=(totals[i-1]+value)%Q
+        transcript[dealer]['feldman']=A
+        combined=[x*y%P for x,y in zip(combined,A)]
+    public=ThresholdPublic(n,t,epoch,purpose,tuple(combined),tuple(transcript))
+    if public.pk==1:raise ValueError('degenerate key')
+    return public,[SecretShare(i,public.kid,x) for i,x in enumerate(totals,1)]
 
 
 def weights(indices):
@@ -132,40 +154,50 @@ def combine(public, base, proofs, context):
     return result
 
 
-def seal(public, payload, label):
-    """Labeled DH-KEM+AEAD prototype with ephemeral-key knowledge proof; NOT TDH2.
+def td_mask(shared):
+    return hashlib.sha256(b'TVMC/TDH2/H1/v2'+shared.to_bytes(256,'big')).digest()
 
-    No claim of paper-equivalent CCA security. Verify before providing partials.
+
+def td_challenge(public,cap,w,wbar):
+    return challenge('TDH2/H2',public.kid,cap['label'],cap['a'],cap['abar'],
+                     cap['c'],cap['nonce'],cap['ct'],w,wbar)
+
+
+def seal(public,payload,label):
+    """TDH2 encrypts a fresh 32-byte AEAD key; label binds its wrapped payload.
+
+    Equations follow Shoup-Gennaro TDH2; distinct encoding/group from upstream.
+    This is a tested research port, not an audited implementation/security proof.
     """
-    r=scalar(); a=pow(G,r,P)
-    nonce=secrets.token_bytes(12)
-    aad=canonical([public.kid,label,a])
-    ct=AESGCM(key_bytes(pow(public.pk,r,P))).encrypt(nonce,payload,aad)
-    cap=dict(kid=public.kid,label=label,a=a,nonce=nonce.hex(),ct=ct.hex())
-    k=scalar(); commitment=pow(G,k,P)
-    c=challenge('capsule',cap,commitment)
-    return dict(cap,proof={'a':commitment,'z':(k+c*r)%Q})
+    key=secrets.token_bytes(32);nonce=secrets.token_bytes(12)
+    aad=canonical([public.kid,label])
+    ct=AESGCM(key).encrypt(nonce,payload,aad)
+    r=scalar();k=scalar();a=pow(G,r,P);abar=pow(GBAR,r,P)
+    c=bytes(x^y for x,y in zip(key,td_mask(pow(public.pk,r,P))))
+    cap=dict(kid=public.kid,label=label,a=a,abar=abar,c=c.hex(),nonce=nonce.hex(),ct=ct.hex())
+    e=td_challenge(public,cap,pow(G,k,P),pow(GBAR,k,P))
+    return dict(cap,e=e,z=(k+e*r)%Q)
 
 
-def check_capsule(public, cap, label):
+def check_capsule(public,cap,label):
     try:
-        if cap['kid']!=public.kid or cap['label']!=label or not point(cap['a']) or cap['a']==1:
-            return False
-        proof=cap['proof']; bare={k:v for k,v in cap.items() if k!='proof'}
-        z=proof['z']; a=proof['a']
-        c=challenge('capsule',bare,a)
-        return (point(a) and type(z) is int and 0<=z<Q and
-                pow(G,z,P)==a*pow(cap['a'],c,P)%P)
-    except (KeyError,ValueError,TypeError):
-        return False
+        if cap['kid']!=public.kid or cap['label']!=label:return False
+        if not all(point(cap[k]) and cap[k]!=1 for k in ('a','abar')):return False
+        e,z=cap['e'],cap['z']
+        if not all(type(v) is int and 0<=v<Q for v in (e,z)):return False
+        if len(bytes.fromhex(cap['c']))!=32 or len(bytes.fromhex(cap['nonce']))!=12:return False
+        if len(bytes.fromhex(cap['ct']))<16:return False
+        w=pow(G,z,P)*pow(pow(cap['a'],e,P),-1,P)%P
+        wbar=pow(GBAR,z,P)*pow(pow(cap['abar'],e,P),-1,P)%P
+        return e==td_challenge(public,cap,w,wbar)
+    except (KeyError,ValueError,TypeError):return False
 
 
-def open_capsule(public, cap, proofs, label, context):
-    if not check_capsule(public,cap,label):
-        raise ValueError('invalid capsule')
+def open_capsule(public,cap,proofs,label,context):
+    if not check_capsule(public,cap,label):raise ValueError('invalid TDH2 capsule')
     shared=combine(public,cap['a'],proofs,context)
-    return AESGCM(key_bytes(shared)).decrypt(bytes.fromhex(cap['nonce']),bytes.fromhex(cap['ct']),
-                                            canonical([public.kid,label,cap['a']]))
+    key=bytes(x^y for x,y in zip(bytes.fromhex(cap['c']),td_mask(shared)))
+    return AESGCM(key).decrypt(bytes.fromhex(cap['nonce']),bytes.fromhex(cap['ct']),canonical([public.kid,label]))
 
 
 def refresh(public, shares):

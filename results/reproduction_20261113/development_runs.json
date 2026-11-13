@@ -1,0 +1,80 @@
+[
+  {
+    "run": "v2_real_run1",
+    "status": "development_interrupted",
+    "reason": "Stopped before issuance after discovering missing utility acceptance gate",
+    "acceptance_observations": [
+      {
+        "test": 0,
+        "error_fraction": 0.006944444444444444,
+        "utility": {
+          "perplexity": 135.00499184363605,
+          "tokens": 943,
+          "top1_agreement": 0.8207847295864263
+        }
+      },
+      {
+        "test": 1,
+        "error_fraction": 0.0,
+        "utility": {
+          "perplexity": 139.13906466054763,
+          "tokens": 943,
+          "top1_agreement": 0.806998939554613
+        }
+      },
+      {
+        "test": 2,
+        "error_fraction": 0.0,
+        "utility": {
+          "perplexity": 133.82505071272732,
+          "tokens": 943,
+          "top1_agreement": 0.8133616118769883
+        }
+      }
+    ]
+  },
+  {
+    "run": "v2_real_run2",
+    "status": "development_interrupted",
+    "reason": "Interrupted for CPU performance fixes",
+    "acceptance_observations": [
+      {
+        "test": 0,
+        "error_fraction": 0.006944444444444444,
+        "utility": {
+          "perplexity": 127.18752537330181,
+          "tokens": 943,
+          "top1_agreement": 0.8907741251325557
+        }
+      },
+      {
+        "test": 1,
+        "error_fraction": 0.0,
+        "utility": {
+          "perplexity": 130.0272843775662,
+          "tokens": 943,
+          "top1_agreement": 0.8748674443266172
+        }
+      },
+      {
+        "test": 2,
+        "error_fraction": 0.0,
+        "utility": {
+          "perplexity": 126.13241443545135,
+          "tokens": 943,
+          "top1_agreement": 0.8918345705196182
+        }
+      }
+    ]
+  },
+  {
+    "run": "v2_real_api",
+    "status": "development_interrupted",
+    "reason": "Interrupted for last-token-only inference optimization"
+  },
+  {
+    "run": "v2_file_final",
+    "status": "development_interrupted",
+    "reason": "Interrupted for last-token-only inference optimization"
+  }
+]

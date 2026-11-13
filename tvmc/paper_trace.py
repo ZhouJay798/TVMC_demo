@@ -1,7 +1,5 @@
-"""L2 encrypted scoring and single-use file-evidence experiment.
-
-Synthetic behavioral fixtures only; no claim of LLM embedding robustness.
-Bit OR-proofs and score CP-proofs use the additive threshold research backend.
+"""Encrypted Tardos scoring, single-use file evidence, public verification.
+Model readout is recomputed by the supplied actual-model reader.
 """
 import math
 import secrets
@@ -53,12 +51,12 @@ def discrete_log_signed(element,bound):
 
 
 class FileTracer:
-    def __init__(self,custody,biases,threshold,group='group-1',scale=1024):
+    def __init__(self,custody,biases,threshold,group='group-1',scale=1024,reader_spec=None):
         self.custody=custody;self.biases=list(map(float,biases));self.threshold=float(threshold)
         if not self.biases or any(not 0<p<1 for p in self.biases):raise ValueError('bad biases')
         self.group=group;self.scale=scale;self.codebook={};self.retired=False;self.evidence=None
         self.params=dict(group=group,biases=self.biases,threshold=self.threshold,scale=scale,
-                         reader='synthetic shared-carrier fixture, not LLM inference')
+                         reader=reader_spec or {'kind':'synthetic-fixture'})
         self.salt=secrets.token_hex(32)
         self.param_seq=custody.ledger.append('parameters_commitment',dict(group=group,commitment=digest([self.params,self.salt])))
 
@@ -119,7 +117,7 @@ class FileTracer:
             records.append(dict(cid=cid,a=a,b=b,proofs=proofs,signatures=signatures,integer_score=score,context=ctx))
         result=dict(group=self.group,file_sha256=self.evidence,observed=observed,scores=scores,
                     cutoff_integer=cutoff,hits=hits,recipients=[self.custody.manifests[c]['message']['recipient'] for c in hits],
-                    evidence=records,scope='synthetic file readout; no API quorum or independent public judge')
+                    evidence=records,scope=self.params['reader'])
         self.custody.ledger.append('trace_result',result)
         return result
 
@@ -188,3 +186,111 @@ def judge_file(result,artifact,reader,entries,expected_head,issuer_pk,registry,p
         return scores==result['scores'] and hits==result['hits'] and recipients==result['recipients']
     except (KeyError,ValueError,TypeError,OverflowError,ZeroDivisionError):
         return False
+
+
+def escrow_parameters(custody,group,parameters):
+    """Must be called before any release. Only ciphertext and commitment are logged."""
+    from .crypto import canonical
+    salt=secrets.token_hex(32);payload=canonical(dict(parameters=parameters,salt=salt))
+    capsule=te.seal(custody.release_key,payload,['probes',group])
+    custody.ledger.append('probe_escrow',dict(group=group,commitment=digest([parameters,salt]),capsule=capsule))
+    return capsule
+
+
+def disclose_parameters(custody,group,capsule,indices,evidence_hash):
+    """Quorum-signed probe release tied to a pre-existing investigation commitment."""
+    import json
+    if len(set(indices))!=len(indices) or len(indices)<custody.release_key.t:raise ValueError('probe quorum missing')
+    entries=custody.ledger.entries
+    if not any(e['kind']=='evidence_commitment' and e['body'].get('group')==group and e['body'].get('file_sha256')==evidence_hash for e in entries):
+        raise ValueError('evidence must precede disclosure')
+    if any(e['kind']=='probe_disclosure' and e['body']['group']==group for e in entries):raise ValueError('probe group already disclosed')
+    if not te.check_capsule(custody.release_key,capsule,['probes',group]):raise ValueError('invalid investigation capsule')
+    ctx=['investigation',group,evidence_hash,digest(capsule)];proofs=[];signed=[]
+    for i in indices:
+        if i not in custody.registry:raise ValueError('unknown member')
+        pr=te.partial(custody.release_key,custody.release_shares[i-1],capsule['a'],ctx)
+        proofs.append(pr);signed.append(sign(custody.members[i-1].identity,'investigation',dict(context=ctx,proof=pr)))
+    payload=te.open_capsule(custody.release_key,capsule,proofs,['probes',group],ctx)
+    decoded=json.loads(payload)
+    escrow=[e for e in entries if e['kind']=='probe_escrow' and e['body']['group']==group]
+    if len(escrow)!=1 or escrow[0]['body']['commitment']!=digest([decoded['parameters'],decoded['salt']]):raise ValueError('probe commitment mismatch')
+    custody.ledger.append('probe_disclosure',dict(group=group,evidence_hash=evidence_hash,proofs=proofs,signatures=signed,opening=decoded))
+    return decoded['parameters']
+
+
+def judge_endpoint(result,target,probes,records,custody,expected_head):
+    """Public endpoint checks before the common encrypted-score verifier."""
+    from .crypto import canonical
+    from .evidence import verify_quorum
+    group=result['group'];entries=custody.ledger.entries
+    try:
+        commitments=[e for e in entries if e['kind']=='endpoint_commitment' and e['body']==dict(group=group,target=target)]
+        collected=[e for e in entries if e['kind']=='endpoint_evidence' and e['body']['group']==group]
+        disclosures=[e for e in entries if e['kind']=='probe_disclosure' and e['body']['group']==group]
+        if any(len(x)!=1 for x in (commitments,collected,disclosures)):return False
+        if not commitments[0]['seq']<disclosures[0]['seq']<collected[0]['seq']:return False
+        if collected[0]['body']['records']!=records:return False
+        if any(e['kind']=='legitimate_endpoint' and e['body']['endpoint']==target['endpoint'] for e in entries):return False
+        reader=lambda _:verify_quorum(records,custody.registry,custody.release_key.t,target,probes,group)
+        return judge_file(result,canonical(target),reader,entries,expected_head,custody.issuer_pk,custody.registry,custody.code_key)
+    except (KeyError,ValueError,TypeError):return False
+
+
+def rescore_rebuttal(custody,tracer,result,cid,erased,indices,rebuttal_digest):
+    """Authorized recomputation after verified rebuttal; no new arbitrary word.
+
+    Caller must validate anchored log first. The allowed request is constrained to
+    deleting positions from the already adjudicated word for this one recipient.
+    """
+    if not tracer.retired or result['group']!=tracer.group or cid not in result['hits']:raise ValueError('no accusation to rebut')
+    valid=[e for e in custody.ledger.entries if e['kind']=='verified_rebuttal' and e['body']==dict(group=tracer.group,cid=cid,erased=sorted(set(erased)),digest=rebuttal_digest)]
+    if len(valid)!=1:raise ValueError('verified rebuttal required')
+    if len(set(indices))!=len(indices) or len(indices)<custody.code_key.t:raise ValueError('score quorum')
+    word=list(result['observed'])
+    for k in erased:
+        if not 0<=k<len(word):raise ValueError('invalid erasure position')
+        word[k]=-1
+    ai=[];B=[]
+    for p,y in zip(tracer.biases,word):
+        u=math.sqrt((1-p)/p);v=math.sqrt(p/(1-p))
+        ai.append(round(tracer.scale*(0 if y==-1 else (u+v)*(1 if y==1 else -1))))
+        B.append(0 if y==-1 else (-v if y==1 else v))
+    bi=round(tracer.scale*sum(B));a=1;b=pow(G,bi,P)
+    for coeff,ct in zip(ai,tracer.codebook[cid]):a=a*pow(ct['a'],coeff,P)%P;b=b*pow(ct['b'],coeff,P)%P
+    ctx=['rebuttal-score',digest(result),cid,sorted(set(erased)),rebuttal_digest,a,b]
+    proofs=[te.partial(custody.code_key,custody.code_shares[i-1],a,ctx) for i in indices]
+    signatures=[sign(custody.members[i-1].identity,'rebuttal-score',dict(context=ctx,proof=p)) for i,p in zip(indices,proofs)]
+    mask=te.combine(custody.code_key,a,proofs,ctx)
+    value=discrete_log_signed(b*pow(mask,-1,P)%P,sum(abs(v) for v in ai)+abs(bi)+1)
+    out=dict(cid=cid,score=value/tracer.scale,retained=value>=result['cutoff_integer'],relation='relay',
+             erased=sorted(set(erased)),proofs=proofs,signatures=signatures,context=ctx)
+    custody.ledger.append('rebuttal_result',out);return out
+
+
+def judge_rebuttal(original,rebuttal_bundle,positions,entries,registry,public):
+    """Verify the allowed erasure rescore using only public material."""
+    try:
+        out=rebuttal_bundle['result'];cid=out['cid'];group=original['group']
+        if cid not in original['hits'] or out['erased']!=sorted(set(positions)):return False
+        opening=next(e['body']['parameters'] for e in entries if e['kind']=='group_disclosed_and_retired' and e['body']['parameters']['group']==group)
+        cts=next(e['body']['ciphertexts'] for e in entries if e['kind']=='encrypted_codeword' and e['body']['cid']==cid and e['body']['group']==group)
+        word=list(original['observed']);scale=opening['scale'];A=[];B=[]
+        for k in positions:word[k]=-1
+        for p,y in zip(opening['biases'],word):
+            u=math.sqrt((1-p)/p);v=math.sqrt(p/(1-p))
+            A.append(round(scale*(0 if y==-1 else (u+v)*(1 if y==1 else -1))))
+            B.append(0 if y==-1 else (-v if y==1 else v))
+        bi=round(scale*sum(B));a=1;b=pow(G,bi,P)
+        for coeff,ct in zip(A,cts):a=a*pow(ct['a'],coeff,P)%P;b=b*pow(ct['b'],coeff,P)%P
+        rdigest=digest(rebuttal_bundle['rebuttal'])
+        context=['rebuttal-score',digest(original),cid,sorted(set(positions)),rdigest,a,b]
+        if out['context']!=context or len(out['proofs'])!=len(out['signatures']):return False
+        for proof,sig in zip(out['proofs'],out['signatures']):
+            if not verify(bytes.fromhex(registry[proof['i']]['identity']),'rebuttal-score',dict(context=context,proof=proof),sig):return False
+        shared=te.combine(public,a,out['proofs'],context)
+        value=round(out['score']*scale)
+        if abs(value)>sum(abs(v) for v in A)+abs(bi)+1:return False
+        if b*pow(shared,-1,P)%P!=pow(G,value,P):return False
+        return out['retained']==(value>=original['cutoff_integer']) and out['relation']=='relay'
+    except (KeyError,ValueError,TypeError,IndexError):return False

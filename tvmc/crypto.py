@@ -1,13 +1,9 @@
-"""Shamir (2,5), Feldman VSS, AND-Schnorr Fiat-Shamir proof, AES-GCM.
-
-RFC 3526 group 14, order q=(p-1)/2, generator 2. Python big integers
-are not constant time. The proof establishes knowledge of a share AND its
-identity secret, bound to session/epoch/asset; it is not a general SNARK.
+"""Shared finite-group parameters and canonical encodings for TVMC v2.
+RFC3526 group14; Python arithmetic is research-only, not constant time.
 """
 import hashlib
 import json
 import secrets
-from dataclasses import dataclass, replace
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -41,96 +37,3 @@ def scalar():
 def key_bytes(k):
     return HKDF(algorithm=hashes.SHA256(), length=32, salt=None,
                 info=b'TVMC/AES-256-GCM/v1').derive(k.to_bytes(256, 'big'))
-
-
-@dataclass(frozen=True)
-class Share:
-    i: int
-    value: int
-    gamma: int
-
-
-@dataclass(frozen=True)
-class Public:
-    commitments: tuple
-    identities: tuple
-    n: int = 5
-    threshold: int = 2
-
-    def y(self, i):
-        if not 1 <= i <= self.n:
-            raise ValueError('unknown custodian index')
-        return self.commitments[0] * pow(self.commitments[1], i, P) % P
-
-    def verify(self, share):
-        return (1 <= share.i <= self.n and 0 <= share.value < Q and
-                0 < share.gamma < Q and pow(G, share.value, P) == self.y(share.i)
-                and pow(G, share.gamma, P) == self.identities[share.i - 1])
-
-
-def share_key():
-    k, a = scalar(), scalar()
-    shares = [Share(i, (k + a * i) % Q, scalar()) for i in range(1, 6)]
-    public = Public((pow(G, k, P), pow(G, a, P)),
-                    tuple(pow(G, s.gamma, P) for s in shares))
-    return k, shares, public
-
-
-def challenge(public, i, a, b, context):
-    return int(digest(['TVMC/AND-Schnorr/v1', public.commitments,
-                       public.identities, i, public.y(i), a, b, context]), 16) % Q
-
-
-def prove(public, share, context):
-    if not public.verify(share):
-        raise ValueError('invalid share')
-    r, s = scalar(), scalar()
-    a, b = pow(G, r, P), pow(G, s, P)
-    c = challenge(public, share.i, a, b, context)
-    return {'i': share.i, 'a': a, 'b': b,
-            'zf': (r + c * share.value) % Q, 'zg': (s + c * share.gamma) % Q}
-
-
-def verify_proof(public, proof, context):
-    try:
-        i, a, b, zf, zg = [proof[k] for k in ('i', 'a', 'b', 'zf', 'zg')]
-        if not all(type(v) is int for v in (i, a, b, zf, zg)):
-            return False
-        if not (1 <= i <= public.n and 0 <= zf < Q and 0 <= zg < Q):
-            return False
-        if not all(1 < v < P and pow(v, Q, P) == 1 for v in (a, b)):
-            return False
-        c = challenge(public, i, a, b, context)
-        return (pow(G, zf, P) == a * pow(public.y(i), c, P) % P and
-                pow(G, zg, P) == b * pow(public.identities[i - 1], c, P) % P)
-    except (KeyError, ValueError, TypeError):
-        return False
-
-
-def recover(public, shares, proofs, context):
-    if len(shares) < public.threshold:
-        raise ValueError('need at least two shares')
-    if len({s.i for s in shares}) != len(shares):
-        raise ValueError('duplicate shares')
-    if len(proofs) != len(shares):
-        raise ValueError('missing NIZK')
-    for s, proof in zip(shares, proofs):
-        if not public.verify(s) or proof.get('i') != s.i or not verify_proof(public, proof, context):
-            raise ValueError('share/NIZK verification failed')
-    k = 0
-    for s in shares:
-        weight = 1
-        for other in shares:
-            if s.i != other.i:
-                weight = weight * (-other.i) * pow(s.i - other.i, -1, Q) % Q
-        k = (k + weight * s.value) % Q
-    return k
-
-
-def encrypt(k, payload, aad):
-    nonce = secrets.token_bytes(12)
-    return nonce + AESGCM(key_bytes(k)).encrypt(nonce, payload, canonical(aad))
-
-
-def decrypt(k, ciphertext, aad):
-    return AESGCM(key_bytes(k)).decrypt(ciphertext[:12], ciphertext[12:], canonical(aad))

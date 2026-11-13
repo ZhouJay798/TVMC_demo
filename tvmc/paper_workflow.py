@@ -16,7 +16,16 @@ from . import paper_hpke as hpke
 from . import paper_threshold as te
 
 
+def _ciphertext_digest(package):
+    from .stream_delivery import ciphertext_digest
+    return ciphertext_digest(package)
+
+
 def sha(data):
+    from pathlib import Path
+    if isinstance(data,Path):
+        from .stream_delivery import file_hash
+        return file_hash(data)
     return hashlib.sha256(data).hexdigest()
 
 
@@ -65,9 +74,9 @@ class Ledger:
 
 
 class Custody:
-    def __init__(self,n=5,t=3):
+    def __init__(self,n=5,t=3,ledger=None):
         self.members=[Member(i) for i in range(1,n+1)]
-        self.ledger=Ledger(); self.registry={}; self.manifests={}; self.requests={}; self.used=set()
+        self.ledger=ledger if ledger is not None else Ledger(); self.registry={}; self.manifests={}; self.requests={}; self.used=set()
         self.issuer=Ed25519PrivateKey.generate()
         self.issuer_pk=self.issuer.public_key().public_bytes_raw()
         for m in self.members:
@@ -107,7 +116,7 @@ class Custody:
         man=package['manifest']; msg=man['message']; cid=msg['cid']
         if (self.manifests.get(cid)!=man or not verify(self.issuer_pk,'manifest',msg,man['signature']) or
             msg['registration']!=self.registry.get(msg['recipient']) or
-            digest(package['chunks'])!=msg['ciphertext_hash'] or digest(package['capsule'])!=msg['capsule_hash'] or
+            _ciphertext_digest(package)!=msg['ciphertext_hash'] or digest(package['capsule'])!=msg['capsule_hash'] or
             not te.check_capsule(self.release_key,package['capsule'],[cid,msg['ciphertext_hash']])):
             raise ValueError('invalid manifest/package/recipient binding')
         return msg
@@ -171,7 +180,7 @@ class Custody:
             if i not in intents or approval['rid']!=rid or not verify(bytes.fromhex(self.registry[i]['identity']),
                         'approval',body,approval['signature']): raise ValueError('invalid approval signature')
         inner=te.open_capsule(self.release_key,package['capsule'],[a['proof'] for a in approvals],
-                  [signed['request']['cid'],digest(package['chunks'])],['release',rid,digest(package['capsule'])])
+                  [signed['request']['cid'],_ciphertext_digest(package)],['release',rid,digest(package['capsule'])])
         self.used.add(rid); self.ledger.append('release',dict(rid=rid,approvals=approvals))
         return inner
 
