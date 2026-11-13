@@ -225,6 +225,27 @@ def aggregate(values,redundancy=3):
     return bits
 
 
+def aggregate_with_abstention(values, redundancy=3, min_abs_margin=0.0):
+    """Research readout: treat missing/near-zero mean margins as erasures.
+
+    This opt-in function does not change the historical detector or its
+    threshold. A nonzero margin threshold and subsequent attribution cutoff
+    require independent calibration for each detector version.
+    """
+    values=np.asarray(values,dtype=float)
+    if type(redundancy) is not int or redundancy<1 or values.size%redundancy:
+        raise ValueError('invalid redundancy or response count')
+    if not np.isfinite(min_abs_margin) or min_abs_margin<0:
+        raise ValueError('min_abs_margin must be finite and nonnegative')
+    values=values.reshape(-1,redundancy)
+    seen=np.isfinite(values)
+    counts=seen.sum(1)
+    mean=np.where(seen,values,0).sum(1)/np.maximum(counts,1)
+    bits=(mean>0).astype(np.int8)
+    bits[(counts==0)|(np.abs(mean)<=min_abs_margin)]=-1
+    return bits
+
+
 def filtered_observation(predict_margins, prompts, keep, redundancy=3):
     """Only allowed requests reach fingerprint inference; rejected slots abstain.
 

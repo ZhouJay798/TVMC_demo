@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "checks": {
+    "U1_delivery_exact": true,
+    "U2_delivery_exact": true,
+    "U3_delivery_exact": true,
+    "encrypted_scores_match_plaintext": true,
+    "source_U1_only": true,
+    "ledger_chain_valid": true,
+    "public_judge_verified": true,
+    "existing_model_bytes_unchanged": true
+  },
+  "elapsed_seconds": 220.70275969899922,
+  "source": "new-paper additive research prototype",
+  "model_scope": "synthetic shared-carrier vector; optional old real model delivery only",
+  "scores": {
+    "fixture-U1": 101.796875,
+    "fixture-U2": -0.7529296875,
+    "fixture-U3": 3.529296875
+  },
+  "recipients": [
+    1
+  ],
+  "n": 5,
+  "t": 3,
+  "limitations": [
+    "Feldman joint-keygen simulation, not paper Pedersen DKG",
+    "labeled DH-KEM prototype, NOT TDH2; no CCA claim",
+    "single-process actor simulation, no isolation or network",
+    "no GPT-2 shared-carrier editing or robustness validation",
+    "no probe escrow, API collector quorum, rebuttal, refresh or L3 enclave",
+    "local hash-chain ledger, no independent witness or external identity assurance"
+  ]
+}
