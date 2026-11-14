@@ -1,0 +1,36 @@
+There was a problem when trying to write in your cache folder (/home/agent/.cache/huggingface/hub). You should set the environment variable TRANSFORMERS_CACHE to a writable directory.
+reference ready 1
+reference ready 2
+reference ready 3
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 48654)
+Traceback (most recent call last):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socketserver.py", line 318, in _handle_request_noblock
+    self.process_request(request, client_address)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socketserver.py", line 349, in process_request
+    self.finish_request(request, client_address)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/server.py", line 408, in handle_one_request
+    self.raw_requestline = self.rfile.readline(65537)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py", line 720, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/ssl.py", line 1267, in recv_into
+    return self.read(nbytes, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/ssl.py", line 1119, in read
+    return self._sslobj.read(len, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+----------------------------------------
+U1 {'case': 'relay_U1', 'screen_matches': None, 'screen_pass': True, 'scores': [84.465447344916, 2.941300132990373, 1.775237623657981], 'initial_hits': [1], 'final_hits': [], 'erased_bits': 64, 'collectors': 3, 'kind': 'actual HTTPS forwarder + anchored rebuttal'}
+U2 {'case': 'U2', 'screen_matches': 16, 'screen_pass': True, 'scores': [-28.898709830972585, 52.625437380953045, 13.456194048269024], 'initial_hits': [2], 'final_hits': [2], 'collectors': 3, 'kind': 'actual model HTTPS'}
+U3 {'case': 'U3', 'screen_matches': 16, 'screen_pass': True, 'scores': [-27.82920921001955, 15.69175717855445, 54.86100051123847], 'initial_hits': [3], 'final_hits': [3], 'collectors': 3, 'kind': 'actual model HTTPS'}
+unmarked {'case': 'unmarked', 'screen_matches': 0, 'screen_pass': False, 'scores': [0.0, 0.0, 0.0], 'initial_hits': [], 'final_hits': [], 'collectors': 3, 'kind': 'actual model HTTPS'}
+ALL API DIAGNOSTIC EXPECTATIONS PASSED

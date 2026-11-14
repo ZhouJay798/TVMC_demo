@@ -10,6 +10,8 @@
 
 新增[CA 证书认证](docs/CA_CERTIFICATES.md)：分发者、成员身份和个人接收公钥均先验 X.509 证书及撤销状态，再使用公钥。
 
+[CA 与 API 防护开关对照实验](results/security_controls_20261114/README.md)：13 类协议攻击各 5 轮，以及真实 HTTPS 的副本归属、转发、伪造响应对照；包含正常业务和无法防御的信任边界。
+
 ## 1. 安装
 
 推荐 Python 3.11/3.12。Windows 把下面 `.venv/bin/python` 改成 `.venv\Scripts\python.exe`。

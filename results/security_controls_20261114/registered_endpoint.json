@@ -1,0 +1,6 @@
+{
+  "normal_unregistered_endpoint_accepted": true,
+  "registered_endpoint_without_exclusion_accepted": true,
+  "registered_endpoint_with_exclusion_accepted": false,
+  "scope": "archived real API evidence rechecked after endpoint registration; no new live investigation"
+}

@@ -1,0 +1,118 @@
+{
+  "rows": [
+    {
+      "case": "U1",
+      "screen_matches": 16,
+      "screen_pass": true,
+      "scores": [
+        84.465447344916,
+        2.941300132990373,
+        1.775237623657981
+      ],
+      "initial_hits": [
+        1
+      ],
+      "final_hits": [
+        1
+      ],
+      "collectors": 3,
+      "kind": "actual model HTTPS"
+    },
+    {
+      "case": "relay_U1",
+      "screen_matches": null,
+      "screen_pass": true,
+      "scores": [
+        84.465447344916,
+        2.941300132990373,
+        1.775237623657981
+      ],
+      "initial_hits": [
+        1
+      ],
+      "final_hits": [],
+      "erased_bits": 64,
+      "collectors": 3,
+      "kind": "actual HTTPS forwarder + anchored rebuttal"
+    },
+    {
+      "case": "U2",
+      "screen_matches": 16,
+      "screen_pass": true,
+      "scores": [
+        -28.898709830972585,
+        52.625437380953045,
+        13.456194048269024
+      ],
+      "initial_hits": [
+        2
+      ],
+      "final_hits": [
+        2
+      ],
+      "collectors": 3,
+      "kind": "actual model HTTPS"
+    },
+    {
+      "case": "U3",
+      "screen_matches": 16,
+      "screen_pass": true,
+      "scores": [
+        -27.82920921001955,
+        15.69175717855445,
+        54.86100051123847
+      ],
+      "initial_hits": [
+        3
+      ],
+      "final_hits": [
+        3
+      ],
+      "collectors": 3,
+      "kind": "actual model HTTPS"
+    },
+    {
+      "case": "unmarked",
+      "screen_matches": 0,
+      "screen_pass": false,
+      "scores": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initial_hits": [],
+      "final_hits": [],
+      "collectors": 3,
+      "kind": "actual model HTTPS"
+    }
+  ],
+  "controls": [
+    {
+      "case": "TLS_identity_replacement",
+      "without_control_accepted": true,
+      "with_control_accepted": false
+    },
+    {
+      "case": "forged_API_responses",
+      "without_control_accepted": true,
+      "without_control_hits": [
+        2
+      ],
+      "with_control_accepted": false
+    },
+    {
+      "case": "collector_disagreement",
+      "without_control_accepted": true,
+      "without_control_hits": [
+        2
+      ],
+      "with_control_accepted": false
+    },
+    {
+      "case": "relay_without_rebuttal",
+      "without_control_accepted": true,
+      "with_control_accepted": false,
+      "meaning": "false weight-leak accusation"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "source_commit": "2b15a3c5e4abf13b96e55569db2868d7407484a3",
+  "protocol_rounds": 5,
+  "protocol_cases": 19,
+  "api_collector_count": 3,
+  "api_target_cases": 5,
+  "production_controls_disabled": false,
+  "scope": "paired protocol ablations + diagnostic reuse of already disclosed probes on actual local HTTPS models"
+}
