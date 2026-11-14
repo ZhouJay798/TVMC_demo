@@ -1,0 +1,12 @@
+{
+  "base_commit": "62c794ed6d97fcec32b6710db3b21a813e73cab4",
+  "files_sha256": {
+    "tvmc/evidence.py": "c5515a91cb826e7ae2590f0e6d66f4b7cdd1754cc31325ae9c512b9385ee96cf",
+    "tvmc/paper_trace.py": "16ac892a5a12fabf03299d527fd221a96c1f09fb5cde865d3ee235c9a7ec4bd2",
+    "tests/test_api_evidence_security.py": "c9f64a1411e109d09da83117a676e2e0278f1367911392c852c7edc6f019b5af",
+    "verify_experiment.py": "b05bef6e1744410eb74cea987584ab71c989ffba17d14d4012fb02b6599951fc"
+  },
+  "real_command": ".venv/bin/python run_experiment.py --output work/final_api_v2_relay_complete_20261114 --bits 64 --threads 2 --evidence relay",
+  "initial_real_run": "interrupted intentionally before issuance to restart on final collection-reservation implementation; not a pass",
+  "timing_fixture": "simulated monotonic clock, 3 collectors, start=100 end=105 final response=106"
+}

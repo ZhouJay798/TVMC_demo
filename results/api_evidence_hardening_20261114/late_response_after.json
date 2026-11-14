@@ -1,0 +1,8 @@
+{
+  "late_response_accepted": false,
+  "reason": "response completed outside committed time window",
+  "last_response_time": 106.0,
+  "window_end": 105.0,
+  "group_reserved": true,
+  "invalid_evidence_logged": false
+}

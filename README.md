@@ -12,6 +12,8 @@
 
 [CA 与 API 防护开关对照实验](results/security_controls_20261114/README.md)：13 类协议攻击各 5 轮，以及真实 HTTPS 的副本归属、转发、伪造响应对照；包含正常业务和无法防御的信任边界。
 
+[最新 API 证据链补强验收](results/api_evidence_hardening_20261114/README.md)：81 项测试通过，修复超时响应和失败重试问题，并重新完成真实模型转发反驳链路。
+
 ## 1. 安装
 
 推荐 Python 3.11/3.12。Windows 把下面 `.venv/bin/python` 改成 `.venv\Scripts\python.exe`。

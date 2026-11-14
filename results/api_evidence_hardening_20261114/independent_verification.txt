@@ -1,0 +1,2 @@
+{"verified": true, "scope": "externally provisioned CA root", "api_evidence_versions": [2], "api_completion_times_verified": true, "recipients": [1], "rebuttal_present": true}
+{"verified_relay_positions": 64, "encrypted_rescore_verified": true, "retained": false}

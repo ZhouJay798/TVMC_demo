@@ -33,8 +33,10 @@ def main():
     checkpoint=trust['checkpoint']
     if not verify_checkpoint(checkpoint,issuer,registry,release.t):raise SystemExit('Checkpoint signatures invalid')
     if not journal.check(checkpoint['head']['chain']):raise SystemExit('Journal changed or rolled back')
+    evidence_versions=[]
     if (root/'api_evidence.json').exists():
         api=json.loads((root/'api_evidence.json').read_text())
+        evidence_versions=sorted({r['body'].get('evidence_version',1) for r in api['records']})
         public=SimpleNamespace(ledger=journal,registry=registry,issuer_pk=issuer,code_key=code,release_key=release)
         passed=judge_endpoint(trace,api['target'],api['probes'],api['records'],public,checkpoint['head']['chain'])
     else:
@@ -43,6 +45,8 @@ def main():
         artifact=root/'recipients/v2-U1/model.zip';reader=model_reader(probes,len(probes)//repeats,repeats,args.threads,root)
         passed=judge_file(trace,artifact,reader,journal.entries,checkpoint['head']['chain'],issuer,registry,code)
     print(json.dumps(dict(verified=passed,scope='independently pinned trust file' if args.trust_sha256 else 'externally provisioned CA root',
+                         api_evidence_versions=evidence_versions or None,
+                         api_completion_times_verified=(passed and evidence_versions==[2]) if evidence_versions else None,
                          recipients=trace['recipients'],rebuttal_present=(root/'rebuttal.json').exists()),ensure_ascii=False))
     if (root/'rebuttal.json').exists():
         # Separate API source finding from the post-rebuttal verdict.

@@ -1,0 +1,14 @@
+{
+  "late_response_accepted": true,
+  "last_response_time": 106.0,
+  "window_end": 105.0,
+  "word": [
+    1
+  ],
+  "signed_request_times": [
+    102.0,
+    103.0,
+    104.0
+  ],
+  "scope": "3-of-5 signed collector timing fixture; simulated clock, not a live model"
+}

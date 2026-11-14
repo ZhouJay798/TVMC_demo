@@ -13,10 +13,13 @@ from .paper_workflow import sign,verify
 
 def read_scores(scores,repeats=3,delta=1.):
     import math
+    if type(repeats) is not int or repeats<1 or not math.isfinite(delta) or delta<=0:raise ValueError('invalid readout parameters')
     if len(scores)%repeats or any(not math.isfinite(float(x)) for x in scores):raise ValueError('unreadable response')
     word=[]
     for k in range(0,len(scores),repeats):
-        total=sum(scores[k:k+repeats]);word.append(1 if total>=delta else 0 if total<=-delta else -1)
+        total=sum(scores[k:k+repeats])
+        if not math.isfinite(total):raise ValueError('nonfinite aggregate readout')
+        word.append(1 if total>=delta else 0 if total<=-delta else -1)
     return word
 
 
@@ -30,14 +33,23 @@ def collect_quorum(custody,target,probes,query,indices,group,repeats=3):
     if not all(k in target for k in ('endpoint','tls_sha256','start','end')):raise ValueError('incomplete target')
     if not any(e['kind']=='endpoint_commitment' and e['body']==dict(group=group,target=target) for e in custody.ledger.entries):
         raise ValueError('endpoint commitment missing')
-    if any(e['kind']=='endpoint_evidence' and e['body']['group']==group for e in custody.ledger.entries):raise ValueError('group already collected')
+    if any(e['kind'] in ('endpoint_evidence','endpoint_collection_started') and e['body']['group']==group for e in custody.ledger.entries):raise ValueError('group already collected or consumed')
+    for i in indices:
+        if i not in custody.registry:raise ValueError('unknown collector')
+        member_key(custody.registry,i)
+    # Consume before sending any probe. Failed or late collections cannot silently
+    # retry a disclosed group. Journal persistence is local single-writer only.
+    custody.ledger.append('endpoint_collection_started',dict(group=group,target=target,collectors=list(indices)))
     records=[]
     for i in indices:
         if i not in custody.registry:raise ValueError('unknown collector')
         now=time.time()
         if not target['start']<=now<=target['end']:raise ValueError('outside committed time window')
         scores=query(target,probes,i)
-        body=dict(member=i,group=group,target=target,probe_hash=digest(probes),scores=scores,time=now)
+        finished=time.time()
+        if not now<=finished<=target['end']:raise ValueError('response completed outside committed time window')
+        body=dict(member=i,group=group,target=target,probe_hash=digest(probes),scores=scores,
+                  time=now,finished=finished,evidence_version=2)
         records.append(dict(body=body,signature=sign(custody.members[i-1].identity,'api-evidence',body)))
     word=verify_quorum(records,custody.registry,custody.release_key.t,target,probes,group,repeats)
     custody.ledger.append('endpoint_evidence',dict(group=group,records=records,word=word))
@@ -45,15 +57,21 @@ def collect_quorum(custody,target,probes,query,indices,group,repeats=3):
 
 
 def verify_quorum(records,registry,threshold,target,probes,group,repeats=3):
-    ids=set();words=[]
+    ids=set();words=[];versions=set()
     for entry in records:
         b=entry['body'];i=b['member']
         if i in ids or i not in registry:raise ValueError('duplicate or unknown collector')
         if b['target']!=target or b['group']!=group or b['probe_hash']!=digest(probes):raise ValueError('evidence binding mismatch')
+        version=b.get('evidence_version',1)
+        if type(version) is not int or version not in (1,2):raise ValueError('unsupported evidence version')
+        versions.add(version)
         if not target['start']<=b['time']<=target['end']:raise ValueError('outside window')
+        if version==2 and not b['time']<=b.get('finished',float('nan'))<=target['end']:
+            raise ValueError('response completed outside committed time window')
         if len(b['scores'])!=len(probes):raise ValueError('missing responses')
         if not verify(member_key(registry,i),'api-evidence',b,entry['signature']):raise ValueError('invalid collector signature')
         ids.add(i);words.append(read_scores(b['scores'],repeats))
+    if len(versions)!=1:raise ValueError('mixed evidence versions')
     if len(ids)<threshold:raise ValueError('insufficient collectors')
     if any(w!=words[0] for w in words):raise ValueError('collectors disagree; insufficient evidence')
     return words[0]

@@ -279,7 +279,10 @@ def judge_endpoint(result,target,probes,records,custody,expected_head):
         if not commitments[0]['seq']<disclosures[0]['seq']<collected[0]['seq']:return False
         if collected[0]['body']['records']!=records:return False
         if any(e['kind']=='legitimate_endpoint' and e['body']['endpoint']==target['endpoint'] for e in entries):return False
-        reader=lambda _:verify_quorum(records,custody.registry,custody.release_key.t,target,probes,group)
+        openings=[e['body']['parameters'] for e in entries if e['kind']=='group_disclosed_and_retired' and e['body']['parameters']['group']==group]
+        if len(openings)!=1:return False
+        repeats=openings[0]['reader'].get('repeats',3)
+        reader=lambda _:verify_quorum(records,custody.registry,custody.release_key.t,target,probes,group,repeats)
         return judge_file(result,canonical(target),reader,entries,expected_head,custody.issuer_pk,custody.registry,custody.code_key)
     except (KeyError,ValueError,TypeError):return False
 

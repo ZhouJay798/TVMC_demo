@@ -1,0 +1,50 @@
+{
+  "records": [
+    {
+      "group": "screen-1",
+      "member": 2,
+      "version": 2,
+      "duration_seconds": 3.0103559494018555,
+      "inside_window": true
+    },
+    {
+      "group": "screen-1",
+      "member": 3,
+      "version": 2,
+      "duration_seconds": 3.1062653064727783,
+      "inside_window": true
+    },
+    {
+      "group": "screen-1",
+      "member": 4,
+      "version": 2,
+      "duration_seconds": 2.950610876083374,
+      "inside_window": true
+    },
+    {
+      "group": "group-1",
+      "member": 2,
+      "version": 2,
+      "duration_seconds": 12.039295673370361,
+      "inside_window": true
+    },
+    {
+      "group": "group-1",
+      "member": 3,
+      "version": 2,
+      "duration_seconds": 11.93251919746399,
+      "inside_window": true
+    },
+    {
+      "group": "group-1",
+      "member": 4,
+      "version": 2,
+      "duration_seconds": 11.731621980667114,
+      "inside_window": true
+    }
+  ],
+  "reserved_groups": [
+    "screen-1",
+    "group-1"
+  ]
+}
