@@ -1,0 +1,19 @@
+{
+  "tested_commit": "fb437661bf42c3d04af247d0d0ca390ee49fac96",
+  "python": "3.12.14",
+  "torch": "2.5.1+cpu",
+  "cryptography": "46.0.3",
+  "model": "SmolLM2-135M-Instruct-Q4_1-converted",
+  "runs": {
+    "file": ".venv/bin/python run_experiment.py --output work/acceptance_20261114/file --bits 64 --threads 2 --attacks",
+    "api": ".venv/bin/python run_experiment.py --output work/acceptance_20261114/api --bits 64 --threads 1 --evidence api",
+    "relay": ".venv/bin/python run_experiment.py --output work/acceptance_20261114/relay --bits 64 --threads 2 --evidence relay"
+  },
+  "security_tests": "results/ca_certificates_20261114/tests.txt (48 passed on same source revision)",
+  "limitations": [
+    "three local integration runs, not statistical confidence over repeated seeds",
+    "quantize/dequantize edited matrices, not a true deployed INT8 runtime",
+    "attack diagnostics on U1 only; all three copies have baseline fingerprint readout",
+    "same-host CA, identities, private shares and witnesses"
+  ]
+}

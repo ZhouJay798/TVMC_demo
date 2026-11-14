@@ -1,0 +1,179 @@
+{
+  "status": "passed",
+  "checks": {
+    "U1_delivery_exact": true,
+    "U1_useful": true,
+    "U1_fingerprint_readable": true,
+    "U2_delivery_exact": true,
+    "U2_useful": true,
+    "U2_fingerprint_readable": true,
+    "U3_delivery_exact": true,
+    "U3_useful": true,
+    "U3_fingerprint_readable": true,
+    "screening_passed": true,
+    "source_U1_only": true,
+    "public_judge_verified": true,
+    "witness_checkpoint": true
+  },
+  "seconds": 603.9610548019409,
+  "model": "SmolLM2-135M-Instruct-Q4_1-converted",
+  "model_parameters": 134515008,
+  "corpus_sha256": "86c4e6aa9db7c042ec79f339dcb96d42b0075e16b8fc2e86bf0ca57e2dc565ed",
+  "evidence_kind": "api",
+  "api_details": {
+    "target": {
+      "endpoint": "https://127.0.0.1:34265/infer",
+      "tls_sha256": "7536b4d3cc0e9fe22ce8bc9fddb885aa6c3151a3feafe0d68f58998d4f34fe8c",
+      "start": 1794646426.1017518,
+      "end": 1794648227.101753
+    },
+    "collectors": [
+      2,
+      3,
+      4
+    ],
+    "words_identical": true
+  },
+  "bits": 64,
+  "screen_bits": 16,
+  "repeats": 3,
+  "members": 5,
+  "threshold": 3,
+  "version_sweep": {
+    "status": "not_run",
+    "passes": null,
+    "scope": "normal-flow demo; run --sweep to assess truncation"
+  },
+  "carrier_gain": 0.6,
+  "owner_training": {
+    "steps": 12,
+    "learning_rate": 2e-05,
+    "first_loss": 3.789560317993164,
+    "last_loss": 5.341124534606934
+  },
+  "base_quality": {
+    "perplexity": 125.29171304887194,
+    "tokens": 943,
+    "top1_agreement": null
+  },
+  "owner_quality": {
+    "perplexity": 124.34899138744476,
+    "tokens": 943,
+    "top1_agreement": null
+  },
+  "acceptance": [
+    {
+      "test": 0,
+      "error_fraction": 0.0,
+      "utility": {
+        "perplexity": 93.17245870038924,
+        "tokens": 940,
+        "top1_agreement": 0.9638297872340426
+      }
+    },
+    {
+      "test": 1,
+      "error_fraction": 0.0,
+      "utility": {
+        "perplexity": 92.8193277239544,
+        "tokens": 940,
+        "top1_agreement": 0.9521276595744681
+      }
+    },
+    {
+      "test": 2,
+      "error_fraction": 0.0,
+      "utility": {
+        "perplexity": 92.48732798151505,
+        "tokens": 940,
+        "top1_agreement": 0.9627659574468085
+      }
+    }
+  ],
+  "copies": [
+    {
+      "recipient": 1,
+      "cid": "v2-U1",
+      "approvers": [
+        2,
+        3,
+        4
+      ],
+      "error_fraction": 0.0,
+      "scores": [
+        103.33532812324607,
+        -5.638165306410877,
+        6.9085447511870335
+      ],
+      "quality": {
+        "perplexity": 125.83149520262154,
+        "tokens": 943,
+        "top1_agreement": 0.9544008483563097
+      }
+    },
+    {
+      "recipient": 2,
+      "cid": "v2-U2",
+      "approvers": [
+        1,
+        3,
+        4
+      ],
+      "error_fraction": 0.0,
+      "scores": [
+        -65.54977943390962,
+        43.42371399574733,
+        -23.960378000943088
+      ],
+      "quality": {
+        "perplexity": 125.42208732506425,
+        "tokens": 943,
+        "top1_agreement": 0.9544008483563097
+      }
+    },
+    {
+      "recipient": 3,
+      "cid": "v2-U3",
+      "approvers": [
+        1,
+        2,
+        4
+      ],
+      "error_fraction": 0.0,
+      "scores": [
+        -36.3811966635868,
+        -7.338505288218188,
+        60.04558670847223
+      ],
+      "quality": {
+        "perplexity": 125.94288825644767,
+        "tokens": 943,
+        "top1_agreement": 0.953340402969247
+      }
+    }
+  ],
+  "attack_results": [],
+  "source_candidates": [
+    1
+  ],
+  "final_attribution": [
+    1
+  ],
+  "attribution": [
+    1
+  ],
+  "scores": {
+    "v2-U1": 103.3359375,
+    "v2-U2": -5.63671875,
+    "v2-U3": 6.91015625
+  },
+  "score_threshold": 36.54983856016332,
+  "limitations": [
+    "Research TDH2/Pedersen-Feldman port over 2048-bit group, not ristretto255 or independently audited",
+    "Local role simulation; no hostile-OS isolation, independent witnesses or L3 enclave",
+    "Measured small-scale SmolLM2 experiment, not paper 100-copy/2048-bit configuration",
+    "One attribution group; robustness probes are issuer diagnostics, not new adjudications",
+    "API TLS pins and witnesses belong to local simulated roles, not external attestation",
+    "Secure erasure and deployment restart key storage not provided"
+  ]
+}

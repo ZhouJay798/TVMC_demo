@@ -1,0 +1,456 @@
+{
+  "status": "passed",
+  "checks": {
+    "U1_delivery_exact": true,
+    "U1_useful": true,
+    "U1_fingerprint_readable": true,
+    "U2_delivery_exact": true,
+    "U2_useful": true,
+    "U2_fingerprint_readable": true,
+    "U3_delivery_exact": true,
+    "U3_useful": true,
+    "U3_fingerprint_readable": true,
+    "screening_passed": true,
+    "source_U1_only": true,
+    "public_judge_verified": true,
+    "witness_checkpoint": true
+  },
+  "seconds": 786.875324010849,
+  "model": "SmolLM2-135M-Instruct-Q4_1-converted",
+  "model_parameters": 134515008,
+  "corpus_sha256": "86c4e6aa9db7c042ec79f339dcb96d42b0075e16b8fc2e86bf0ca57e2dc565ed",
+  "evidence_kind": "file",
+  "api_details": null,
+  "bits": 64,
+  "screen_bits": 16,
+  "repeats": 3,
+  "members": 5,
+  "threshold": 3,
+  "version_sweep": {
+    "grid": [
+      1,
+      8,
+      32
+    ],
+    "results": [
+      {
+        "transform": "generic_norm_truncation",
+        "reference": "public_base",
+        "rank": 1,
+        "error_fraction": 0.975,
+        "quality": {
+          "perplexity": 124.70346921735066,
+          "tokens": 943,
+          "top1_agreement": 0.9819724284199364
+        },
+        "useful": true,
+        "passes": false
+      },
+      {
+        "transform": "generic_norm_truncation",
+        "reference": "public_base",
+        "rank": 8,
+        "error_fraction": 0.7125,
+        "quality": {
+          "perplexity": 124.61696412959601,
+          "tokens": 943,
+          "top1_agreement": 0.9703075291622482
+        },
+        "useful": true,
+        "passes": false
+      },
+      {
+        "transform": "generic_norm_truncation",
+        "reference": "public_base",
+        "rank": 32,
+        "error_fraction": 0.125,
+        "quality": {
+          "perplexity": 124.53105706670102,
+          "tokens": 943,
+          "top1_agreement": 0.968186638388123
+        },
+        "useful": true,
+        "passes": false
+      },
+      {
+        "transform": "generic_norm_truncation",
+        "reference": "no_reference",
+        "rank": 1,
+        "error_fraction": 0.5875,
+        "quality": {
+          "perplexity": 4429.215290432134,
+          "tokens": 943,
+          "top1_agreement": 0.391304347826087
+        },
+        "useful": false,
+        "passes": true
+      },
+      {
+        "transform": "generic_norm_truncation",
+        "reference": "no_reference",
+        "rank": 8,
+        "error_fraction": 0.5375,
+        "quality": {
+          "perplexity": 344.86360847822266,
+          "tokens": 943,
+          "top1_agreement": 0.46977730646871685
+        },
+        "useful": false,
+        "passes": true
+      },
+      {
+        "transform": "generic_norm_truncation",
+        "reference": "no_reference",
+        "rank": 32,
+        "error_fraction": 0.5375,
+        "quality": {
+          "perplexity": 246.36862317369506,
+          "tokens": 943,
+          "top1_agreement": 0.4984093319194062
+        },
+        "useful": false,
+        "passes": true
+      }
+    ],
+    "passes": false,
+    "rule": "useful means owner top1 agreement >= .85; readable error <= .086",
+    "scope": "randomized low-rank approximation, finite grid and one unbiased test copy; not exact SVD or proof for every rank"
+  },
+  "carrier_gain": 0.6,
+  "owner_training": {
+    "steps": 12,
+    "learning_rate": 2e-05,
+    "first_loss": 3.789560317993164,
+    "last_loss": 5.341124534606934
+  },
+  "base_quality": {
+    "perplexity": 125.29171304887194,
+    "tokens": 943,
+    "top1_agreement": null
+  },
+  "owner_quality": {
+    "perplexity": 124.34899138744476,
+    "tokens": 943,
+    "top1_agreement": null
+  },
+  "acceptance": [
+    {
+      "test": 0,
+      "error_fraction": 0.0,
+      "utility": {
+        "perplexity": 93.17246323772626,
+        "tokens": 940,
+        "top1_agreement": 0.9638297872340426
+      }
+    },
+    {
+      "test": 1,
+      "error_fraction": 0.0,
+      "utility": {
+        "perplexity": 92.81931868367482,
+        "tokens": 940,
+        "top1_agreement": 0.9521276595744681
+      }
+    },
+    {
+      "test": 2,
+      "error_fraction": 0.0,
+      "utility": {
+        "perplexity": 92.48733698945989,
+        "tokens": 940,
+        "top1_agreement": 0.9627659574468085
+      }
+    }
+  ],
+  "copies": [
+    {
+      "recipient": 1,
+      "cid": "v2-U1",
+      "approvers": [
+        2,
+        3,
+        4
+      ],
+      "error_fraction": 0.0,
+      "scores": [
+        84.465447344916,
+        2.941300132990373,
+        1.775237623657981
+      ],
+      "quality": {
+        "perplexity": 125.65766579874561,
+        "tokens": 943,
+        "top1_agreement": 0.9575821845174973
+      }
+    },
+    {
+      "recipient": 2,
+      "cid": "v2-U2",
+      "approvers": [
+        1,
+        3,
+        4
+      ],
+      "error_fraction": 0.0,
+      "scores": [
+        -28.898709830972585,
+        52.625437380953045,
+        13.456194048269024
+      ],
+      "quality": {
+        "perplexity": 125.26132661828981,
+        "tokens": 943,
+        "top1_agreement": 0.9628844114528102
+      }
+    },
+    {
+      "recipient": 3,
+      "cid": "v2-U3",
+      "approvers": [
+        1,
+        2,
+        4
+      ],
+      "error_fraction": 0.0,
+      "scores": [
+        -27.82920921001955,
+        15.69175717855445,
+        54.86100051123847
+      ],
+      "quality": {
+        "perplexity": 126.15105592596785,
+        "tokens": 943,
+        "top1_agreement": 0.9597030752916225
+      }
+    }
+  ],
+  "attack_results": [
+    {
+      "attack": "unchanged",
+      "details": {},
+      "source_bit_error": 0.0,
+      "erasures": 0,
+      "scores": [
+        84.465447344916,
+        2.941300132990373,
+        1.775237623657981
+      ],
+      "hits": [
+        1
+      ],
+      "quality": {
+        "perplexity": 125.65766579874561,
+        "tokens": 943,
+        "top1_agreement": 0.9575821845174973
+      },
+      "useful": true
+    },
+    {
+      "attack": "magnitude_prune_0.1",
+      "details": {
+        "scope": "edited MLP output matrices",
+        "target_sparsity": 0.1
+      },
+      "source_bit_error": 0.0,
+      "erasures": 0,
+      "scores": [
+        84.465447344916,
+        2.941300132990373,
+        1.775237623657981
+      ],
+      "hits": [
+        1
+      ],
+      "quality": {
+        "perplexity": 126.03763101721528,
+        "tokens": 943,
+        "top1_agreement": 0.9289501590668081
+      },
+      "useful": true
+    },
+    {
+      "attack": "magnitude_prune_0.3",
+      "details": {
+        "scope": "edited MLP output matrices",
+        "target_sparsity": 0.3
+      },
+      "source_bit_error": 0.0,
+      "erasures": 0,
+      "scores": [
+        84.465447344916,
+        2.941300132990373,
+        1.775237623657981
+      ],
+      "hits": [
+        1
+      ],
+      "quality": {
+        "perplexity": 134.45747107876244,
+        "tokens": 943,
+        "top1_agreement": 0.7613997879109226
+      },
+      "useful": false
+    },
+    {
+      "attack": "structured_mlp_zero_5pct",
+      "details": {
+        "scope": "edited MLP output columns; tensor dimensions unchanged"
+      },
+      "source_bit_error": 0.140625,
+      "erasures": 2,
+      "scores": [
+        67.36064574119622,
+        6.261759945798627,
+        13.31601538474126
+      ],
+      "hits": [
+        1
+      ],
+      "quality": {
+        "perplexity": 383.944084397361,
+        "tokens": 943,
+        "top1_agreement": 0.5217391304347826
+      },
+      "useful": false
+    },
+    {
+      "attack": "int8_roundtrip_row",
+      "details": {
+        "scope": "edited matrices; quantize/dequantize, not INT8 runtime"
+      },
+      "source_bit_error": 0.0,
+      "erasures": 0,
+      "scores": [
+        84.465447344916,
+        2.941300132990373,
+        1.775237623657981
+      ],
+      "hits": [
+        1
+      ],
+      "quality": {
+        "perplexity": 125.69072722695924,
+        "tokens": 943,
+        "top1_agreement": 0.9565217391304348
+      },
+      "useful": true
+    },
+    {
+      "attack": "int8_roundtrip_group64",
+      "details": {
+        "scope": "edited matrices; quantize/dequantize, not INT8 runtime"
+      },
+      "source_bit_error": 0.0,
+      "erasures": 0,
+      "scores": [
+        84.465447344916,
+        2.941300132990373,
+        1.775237623657981
+      ],
+      "hits": [
+        1
+      ],
+      "quality": {
+        "perplexity": 126.02227505175078,
+        "tokens": 943,
+        "top1_agreement": 0.9565217391304348
+      },
+      "useful": true
+    },
+    {
+      "attack": "full_finetune_4steps",
+      "details": {
+        "optimizer": "SGD",
+        "lr": 1e-05,
+        "steps": 4,
+        "warning": "small diagnostic, not business convergence"
+      },
+      "source_bit_error": 0.0,
+      "erasures": 0,
+      "scores": [
+        84.465447344916,
+        2.941300132990373,
+        1.775237623657981
+      ],
+      "hits": [
+        1
+      ],
+      "quality": {
+        "perplexity": 125.56187786788648,
+        "tokens": 943,
+        "top1_agreement": 0.9597030752916225
+      },
+      "useful": true
+    },
+    {
+      "attack": "average_U1_U2",
+      "details": {
+        "true_sources": [
+          1,
+          2
+        ],
+        "innocent": [
+          3
+        ]
+      },
+      "source_bit_error": 0.40625,
+      "erasures": 23,
+      "scores": [
+        24.251643654097762,
+        27.67662034611262,
+        11.294100871706165
+      ],
+      "hits": [],
+      "quality": {
+        "perplexity": 125.09598871000038,
+        "tokens": 943,
+        "top1_agreement": 0.9777306468716861
+      },
+      "useful": true
+    },
+    {
+      "attack": "reset_to_public_base",
+      "details": {
+        "reference": "available public base",
+        "expected_boundary": "may erase watermark while retaining utility"
+      },
+      "source_bit_error": 1.0,
+      "erasures": 64,
+      "scores": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "hits": [],
+      "quality": {
+        "perplexity": 125.29171304887194,
+        "tokens": 943,
+        "top1_agreement": 0.9798515376458112
+      },
+      "useful": true
+    }
+  ],
+  "source_candidates": [
+    1
+  ],
+  "final_attribution": [
+    1
+  ],
+  "attribution": [
+    1
+  ],
+  "scores": {
+    "v2-U1": 84.46484375,
+    "v2-U2": 2.94140625,
+    "v2-U3": 1.7744140625
+  },
+  "score_threshold": 36.54983856016332,
+  "limitations": [
+    "Research TDH2/Pedersen-Feldman port over 2048-bit group, not ristretto255 or independently audited",
+    "Local role simulation; no hostile-OS isolation, independent witnesses or L3 enclave",
+    "Measured small-scale SmolLM2 experiment, not paper 100-copy/2048-bit configuration",
+    "One attribution group; robustness probes are issuer diagnostics, not new adjudications",
+    "API TLS pins and witnesses belong to local simulated roles, not external attestation",
+    "Secure erasure and deployment restart key storage not provided"
+  ]
+}

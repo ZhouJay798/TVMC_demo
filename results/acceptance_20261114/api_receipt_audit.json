@@ -1,0 +1,22 @@
+{
+  "certificates_verified": 11,
+  "checkpoint_verified": true,
+  "two_dkg_keys_distinct": true,
+  "receipts": [
+    {
+      "cid": "v2-U1",
+      "recipient": 1,
+      "valid": true
+    },
+    {
+      "cid": "v2-U2",
+      "recipient": 2,
+      "valid": true
+    },
+    {
+      "cid": "v2-U3",
+      "recipient": 3,
+      "valid": true
+    }
+  ]
+}
