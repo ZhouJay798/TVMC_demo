@@ -6,6 +6,8 @@
 
 [已确认实验结果与未完成项](results/reproduction_20261113/README.md)：真实模型文件链路、独立复核与 21 项测试通过；API 完整验收状态请以该报告为准。
 
+2026-11-14：新增[成员独立核算得分的解密批准入口](docs/MEMBER_SCORE_APPROVAL.md)，拒绝指纹密文冒充得分、绑定整批请求，并在公开核验中检查成员批准。仍为同进程角色模拟，非独立密钥保管服务。
+
 ## 1. 安装
 
 推荐 Python 3.11/3.12。Windows 把下面 `.venv/bin/python` 改成 `.venv\Scripts\python.exe`。

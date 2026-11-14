@@ -94,6 +94,24 @@ class FileTracer:
         ai=[round(self.scale*a) for a in A];bi=round(self.scale*sum(B))
         cutoff=math.ceil(self.scale*self.threshold+(len(ai)+1)/2)
         bound=sum(abs(a) for a in ai)+abs(bi)+1
+        from .score_approval import ScoreApprover, score_ciphertext
+        import copy
+        head=self.custody.ledger.entries[-1]['hash']
+        request=dict(group=self.group,kid=pub.kid,head=head,evidence=self.evidence,
+                     observed=observed,scores=[dict(cid=cid,**score_ciphertext(self.params,observed,cts))
+                                               for cid,cts in self.codebook.items()])
+        self.custody.ledger.append('score_request',request)
+        snapshot=copy.deepcopy(self.custody.ledger.entries)
+        head=snapshot[-1]['hash']
+        batches={}
+        for i in indices:
+            member=self.custody.members[i-1]
+            approver=ScoreApprover(pub,self.custody.code_shares[i-1],member.identity,
+                                  self.custody.issuer_pk,self.custody.registry,reader)
+            batches[i]=approver.approve(request,snapshot,head,artifact)
+        for batch in batches.values():
+            self.custody.ledger.append('score_approval',dict(approval=batch['approval'],
+                signature=batch['approval_signature']))
         scores={};hits=[];records=[]
         for cid,cts in self.codebook.items():
             # Authenticate against immutable-for-this-run enrollment, not a caller-supplied codebook.
@@ -106,8 +124,9 @@ class FileTracer:
             ctx=['score',self.group,self.evidence,observed,cid,a,b]
             proofs=[];signatures=[]
             for i in indices:
-                pr=te.partial(pub,self.custody.code_shares[i-1],a,ctx)
-                body=dict(context=ctx,proof=pr);sig=sign(self.custody.members[i-1].identity,'score',body)
+                response=next(row for row in batches[i]['responses'] if row['cid']==cid)
+                pr=response['proof'];sig=response['signature']
+                body=dict(context=ctx,proof=pr)
                 if not verify(bytes.fromhex(self.custody.registry[i]['identity']),'score',body,sig):raise ValueError('score identity')
                 proofs.append(pr);signatures.append(sig)
             mask=te.combine(pub,a,proofs,ctx)
@@ -115,7 +134,7 @@ class FileTracer:
             scores[cid]=score/self.scale
             if score>=cutoff:hits.append(cid)
             records.append(dict(cid=cid,a=a,b=b,proofs=proofs,signatures=signatures,integer_score=score,context=ctx))
-        result=dict(group=self.group,file_sha256=self.evidence,observed=observed,scores=scores,
+        result=dict(protocol="member-checked-scores-v1",request_hash=digest(request),group=self.group,file_sha256=self.evidence,observed=observed,scores=scores,
                     cutoff_integer=cutoff,hits=hits,recipients=[self.custody.manifests[c]['message']['recipient'] for c in hits],
                     evidence=records,scope=self.params['reader'])
         self.custody.ledger.append('trace_result',result)
@@ -155,6 +174,28 @@ def judge_file(result,artifact,reader,entries,expected_head,issuer_pk,registry,p
         bound=sum(abs(a) for a in ai)+abs(bi)+1
         codes=[e for e in entries if e['kind']=='encrypted_codeword' and e['body']['group']==group]
         if len(result['evidence'])!=len(codes):return False
+        if result.get('protocol') == 'member-checked-scores-v1':
+            requests=[e for e in entries if e['kind']=='score_request' and e['body']['group']==group]
+            if len(requests)!=1:return False
+            request=requests[0];req=request['body']
+            if (digest(req)!=result['request_hash'] or req['kid']!=public.kid or
+                req['observed']!=observed or req['evidence']!=sha(artifact) or
+                not disclosure[0]['seq']<request['seq']<traces[0]['seq'] or
+                req['head']!=request['prev']):return False
+            expected=[dict(cid=r['cid'],a=r['a'],b=r['b']) for r in result['evidence']]
+            if req['scores']!=expected:return False
+            approved=set()
+            for entry in entries:
+                if entry['kind']!='score_approval':continue
+                body=entry['body'];approval=body['approval']
+                if approval['request_hash']!=result['request_hash']:continue
+                i=approval['member']
+                if (i in approved or i not in registry or
+                    not request['seq']<entry['seq']<traces[0]['seq'] or
+                    not verify(bytes.fromhex(registry[i]['identity']),'score-approval',approval,body['signature'])):return False
+                approved.add(i)
+            if len(approved)<public.t:return False
+            if any(p['i'] not in approved for r in result['evidence'] for p in r['proofs']):return False
         records={x['cid']:x for x in result['evidence']}
         if len(records)!=len(codes):return False
         scores={};hits=[];recipients=[]
