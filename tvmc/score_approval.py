@@ -4,6 +4,8 @@ Trusted provisioning supplies one share, identity key, public roots and evidence
 reader. The coordinator cannot supply a different reader in a request. This local
 prototype still co-locates keys; it is not an isolated service or durable policy.
 """
+from .pki import issuer_key, member_key
+
 import copy
 import math
 from .crypto import P, G, digest
@@ -44,6 +46,8 @@ class ScoreApprover:
         retries are also rejected; policy state must be persisted in deployment.
         """
         from .paper_trace import verify_bit
+        self.issuer_pk=issuer_key(self.registry,self.issuer_pk)
+        member_key(self.registry,self.share.i)
         req, entries = copy.deepcopy(request), copy.deepcopy(entries)
         group = req['group']
         if group in self.used_groups:
@@ -109,6 +113,8 @@ class ScoreApprover:
             cid, cts = entry['body']['cid'], entry['body']['ciphertexts']
             manifest = one('manifest', lambda b: b['message']['cid'] == cid)
             man = manifest['body']; msg = man['message']
+            member_key(self.registry,msg['recipient'])
+            member_key(self.registry,msg['recipient'],'receiving')
             if not commitment['seq'] < entry['seq'] < manifest['seq'] < evidence['seq']:
                 raise ValueError('codebook not registered before evidence')
             all_codes = [e['body'] for e in entries if e['kind'] == 'encrypted_codeword' and e['body']['cid'] == cid]

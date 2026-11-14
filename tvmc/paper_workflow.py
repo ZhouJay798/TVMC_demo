@@ -1,6 +1,6 @@
 """New-paper custody path, isolated from the legacy API.
 
-Local protocol simulation, pinned in-memory public keys, Ed25519 identities,
+Local protocol simulation, CA-validated Ed25519 identities and X25519 recipients,
 hash-chain ledger (not independent transparency witnesses). See migration docs.
 """
 import copy
@@ -14,6 +14,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from .crypto import canonical, digest
 from . import paper_hpke as hpke
 from . import paper_threshold as te
+from .pki import DemoCA, Trust, Registry, pem, member_key, issuer_key
 
 
 def _ciphertext_digest(package):
@@ -48,10 +49,12 @@ class Member:
     identity: object = field(default_factory=Ed25519PrivateKey.generate,repr=False)
     receiving: object = field(default_factory=X25519PrivateKey.generate,repr=False)
 
+    certificates: dict = field(default_factory=dict,repr=False)
+
     @property
     def registration(self):
         return dict(i=self.i,identity=self.identity.public_key().public_bytes_raw().hex(),
-                    receiving=self.receiving.public_key().public_bytes_raw().hex())
+                    receiving=self.receiving.public_key().public_bytes_raw().hex(),**self.certificates)
 
 
 class Ledger:
@@ -78,12 +81,18 @@ class Custody:
         self.members=[Member(i) for i in range(1,n+1)]
         self.ledger=ledger if ledger is not None else Ledger(); self.registry={}; self.manifests={}; self.requests={}; self.used=set()
         self.issuer=Ed25519PrivateKey.generate()
-        self.issuer_pk=self.issuer.public_key().public_bytes_raw()
+        self._issuer_pk=self.issuer.public_key().public_bytes_raw()
+        self.ca=DemoCA()
+        issuer_cert=self.ca.issue('distributor',self.issuer.public_key(),'issuer')
+        self.registry=Registry(Trust(pem(self.ca.root),self.ca.crl(),issuer_cert))
         for m in self.members:
+            m.certificates=dict(identity_certificate=self.ca.issue('U'+str(m.i),m.identity.public_key(),'identity'),
+                                receiving_certificate=self.ca.issue('U'+str(m.i),m.receiving.public_key(),'receiving'))
             reg=m.registration; sig=sign(m.identity,'join',reg)
+            self.registry[m.i]=copy.deepcopy(reg)
             challenge=secrets.token_bytes(32)
-            wrapped=hpke.seal(bytes.fromhex(reg['receiving']),challenge,canonical(reg))
-            if hpke.open(m.receiving,wrapped,canonical(reg))!=challenge or not verify(bytes.fromhex(reg['identity']),'join',reg,sig):
+            wrapped=hpke.seal(member_key(self.registry,reg['i'],'receiving'),challenge,canonical(reg))
+            if hpke.open(m.receiving,wrapped,canonical(reg))!=challenge or not verify(member_key(self.registry,reg['i']),'join',reg,sig):
                 raise ValueError('registration failed')
             self.registry[m.i]=copy.deepcopy(reg)
             self.ledger.append('registration',dict(registration=reg,signature=sig))
@@ -91,7 +100,14 @@ class Custody:
         self.code_key,self.code_shares=te.joint_keygen(n,t,'codebook')
         self.ledger.append('key_generation',dict(release=self.release_key.__dict__,codebook=self.code_key.__dict__))
 
+    @property
+    def issuer_pk(self):
+        return issuer_key(self.registry,self._issuer_pk)
+
     def issue(self,recipient,payload,cid=None):
+        self.issuer_pk
+        member_key(self.registry,recipient)
+
         reg=self.registry[recipient]; cid=cid or secrets.token_hex(16)
         if cid in self.manifests:
             raise ValueError('copy identifier already issued')
@@ -101,7 +117,7 @@ class Custody:
             aad=canonical([cid,j,total,j==total-1])
             chunks.append(AESGCM(key).encrypt(j.to_bytes(12,'big'),payload[j*size:(j+1)*size],aad).hex())
         ct_hash=digest(chunks)
-        inner=hpke.seal(bytes.fromhex(reg['receiving']),key+omega,cid.encode())
+        inner=hpke.seal(member_key(self.registry,reg['i'],'receiving'),key+omega,cid.encode())
         label=[cid,ct_hash]; cap=te.seal(self.release_key,inner,label)
         code_entries=[e['body'] for e in self.ledger.entries if e['kind']=='encrypted_codeword' and e['body']['cid']==cid]
         msg=dict(cid=cid,recipient=recipient,registration=reg,commitment=sha(payload+omega),
@@ -114,6 +130,8 @@ class Custody:
 
     def validate_package(self,package):
         man=package['manifest']; msg=man['message']; cid=msg['cid']
+        member_key(self.registry,msg['recipient'])
+        member_key(self.registry,msg['recipient'],'receiving')
         if (self.manifests.get(cid)!=man or not verify(self.issuer_pk,'manifest',msg,man['signature']) or
             msg['registration']!=self.registry.get(msg['recipient']) or
             _ciphertext_digest(package)!=msg['ciphertext_hash'] or digest(package['capsule'])!=msg['capsule_hash'] or
@@ -136,7 +154,7 @@ class Custody:
         if (i!=msg['recipient'] or req['cid']!=msg['cid'] or req['capsule_hash']!=msg['capsule_hash'] or
             req['epoch']!=self.release_key.epoch or req['kid']!=self.release_key.kid or
             req['policy']!='any-t-registered' or not req['nonce'] or
-            not verify(bytes.fromhex(self.registry[i]['identity']),'request',req,signed['signature'])):
+            not verify(member_key(self.registry,i),'request',req,signed['signature'])):
             raise ValueError('invalid release request')
         return digest(req)
 
@@ -146,7 +164,7 @@ class Custody:
             raise ValueError('unknown or completed request')
         intent=dict(i=member.i,rid=rid)
         result=dict(intent,signature=sign(member.identity,'intent',intent))
-        if not verify(bytes.fromhex(self.registry[member.i]['identity']),'intent',intent,result['signature']):
+        if not verify(member_key(self.registry,member.i),'intent',intent,result['signature']):
             raise ValueError('unregistered identity key')
         self.ledger.append('intent',result)
         return result
@@ -156,7 +174,7 @@ class Custody:
         for e in self.ledger.entries:
             if e['kind']!='intent': continue
             body=e['body']; i=body['i']
-            if body['rid']==rid and i in self.registry and verify(bytes.fromhex(self.registry[i]['identity']),
+            if body['rid']==rid and i in self.registry and verify(member_key(self.registry,i),
                       'intent',dict(i=i,rid=rid),body['signature']): approved.add(i)
         return approved
 
@@ -177,7 +195,7 @@ class Custody:
             raise ValueError('unknown request, replay or missing intent quorum')
         for approval in approvals:
             i=approval['proof']['i']; body={k:v for k,v in approval.items() if k!='signature'}
-            if i not in intents or approval['rid']!=rid or not verify(bytes.fromhex(self.registry[i]['identity']),
+            if i not in intents or approval['rid']!=rid or not verify(member_key(self.registry,i),
                         'approval',body,approval['signature']): raise ValueError('invalid approval signature')
         inner=te.open_capsule(self.release_key,package['capsule'],[a['proof'] for a in approvals],
                   [signed['request']['cid'],_ciphertext_digest(package)],['release',rid,digest(package['capsule'])])

@@ -3,6 +3,8 @@
 Collectors sign raw responses; all decoded words must be identical. Local role
 simulation does not establish that an arbitrary remote service is immutable.
 """
+from .pki import member_key
+
 import hashlib
 import time
 from .crypto import digest,canonical
@@ -50,7 +52,7 @@ def verify_quorum(records,registry,threshold,target,probes,group,repeats=3):
         if b['target']!=target or b['group']!=group or b['probe_hash']!=digest(probes):raise ValueError('evidence binding mismatch')
         if not target['start']<=b['time']<=target['end']:raise ValueError('outside window')
         if len(b['scores'])!=len(probes):raise ValueError('missing responses')
-        if not verify(bytes.fromhex(registry[i]['identity']),'api-evidence',b,entry['signature']):raise ValueError('invalid collector signature')
+        if not verify(member_key(registry,i),'api-evidence',b,entry['signature']):raise ValueError('invalid collector signature')
         ids.add(i);words.append(read_scores(b['scores'],repeats))
     if len(ids)<threshold:raise ValueError('insufficient collectors')
     if any(w!=words[0] for w in words):raise ValueError('collectors disagree; insufficient evidence')
@@ -90,7 +92,7 @@ class ServedLog:
 
 def verify_rebuttal(rebuttal,anchor,registry,probes,window,delta=60.,similarity=.8):
     member=rebuttal['member'];head=anchor['head']
-    if member!=head['member'] or not verify(bytes.fromhex(registry[member]['identity']),'served-head',head,anchor['signature']):raise ValueError('invalid anchored head')
+    if member!=head['member'] or not verify(member_key(registry,member),'served-head',head,anchor['signature']):raise ValueError('invalid anchored head')
     entries=rebuttal['entries'];prev='0'*64
     if head['size']!=len(entries):raise ValueError('chain length mismatch')
     for i,e in enumerate(entries):

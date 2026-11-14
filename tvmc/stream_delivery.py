@@ -1,4 +1,6 @@
 """Bounded-memory model delivery. Manifest binds ordered ciphertext chunk hashes."""
+from .pki import member_key
+
 import hashlib
 import os
 from pathlib import Path
@@ -24,6 +26,8 @@ def ciphertext_digest(package):
 
 
 def issue_file(custody,recipient,path,directory,cid):
+    custody.issuer_pk
+    member_key(custody.registry,recipient)
     if cid in custody.manifests:raise ValueError('duplicate cid')
     directory=Path(directory);directory.mkdir(parents=True,exist_ok=False,mode=0o700)
     reg=custody.registry[recipient];key=secrets.token_bytes(32);omega=secrets.token_bytes(32)
@@ -36,7 +40,7 @@ def issue_file(custody,recipient,path,directory,cid):
     h.update(omega)
     package=dict(storage='files',chunks=chunks)
     ct_hash=ciphertext_digest(package)
-    inner=hpke.seal(bytes.fromhex(reg['receiving']),key+omega,cid.encode())
+    inner=hpke.seal(member_key(custody.registry,recipient,'receiving'),key+omega,cid.encode())
     cap=te.seal(custody.release_key,inner,[cid,ct_hash])
     codes=[e['body'] for e in custody.ledger.entries if e['kind']=='encrypted_codeword' and e['body']['cid']==cid]
     msg=dict(cid=cid,recipient=recipient,registration=reg,commitment=h.hexdigest(),

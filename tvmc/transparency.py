@@ -3,6 +3,9 @@
 Witness keys are separate role keys, but local co-location is not independent
 infrastructure. Callers must retain trusted checkpoints outside this file.
 """
+from .pki import issuer_key
+from .pki import member_key
+
 import hashlib,json,os
 from pathlib import Path
 from .crypto import canonical,digest
@@ -58,12 +61,14 @@ class Journal(Ledger):
 
 
 def verify_checkpoint(checkpoint,issuer_pk,registry,threshold):
+    try:issuer_pk=issuer_key(registry,issuer_pk)
+    except ValueError:return False
     head=checkpoint['head']
     if not verify(issuer_pk,'tree-head',head,checkpoint['signature']):return False
     ids=set()
     for w in checkpoint['witnesses']:
         i=w['i']
-        if i in ids or i not in registry or not verify(bytes.fromhex(registry[i]['identity']),'witness',head,w['signature']):return False
+        if i in ids or i not in registry or not verify(member_key(registry,i),'witness',head,w['signature']):return False
         ids.add(i)
     return len(ids)>=threshold
 

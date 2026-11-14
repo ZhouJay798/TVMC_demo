@@ -6,19 +6,30 @@ from types import SimpleNamespace
 from tvmc.paper_threshold import ThresholdPublic
 from tvmc.paper_trace import judge_file,judge_endpoint
 from tvmc.paper_workflow import sha
+from tvmc.pki import Trust, Registry, issuer_key, member_key
 from tvmc.transparency import Journal,verify_checkpoint
 from run_experiment import model_reader
 
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('run',type=Path)
-    ap.add_argument('--trust-sha256',help='Externally retained hash of trust.json; absent means local consistency audit only')
+    ap.add_argument('--trust-sha256',help='Externally retained hash of trust.json; required unless --ca-root is supplied')
+    ap.add_argument('--ca-root',type=Path,help='CA root provisioned through an independent trusted channel')
+    ap.add_argument('--min-crl-number',type=int,default=0,help='Minimum CRL number retained outside the experiment directory')
     ap.add_argument('--threads',type=int,default=4);args=ap.parse_args();root=args.run
     trust_path=root/'trust.json'
     if args.trust_sha256 and sha(trust_path)!=args.trust_sha256:raise SystemExit('Trust anchor was replaced')
     trust=json.loads(trust_path.read_text());trace=json.loads((root/'trace.json').read_text())
-    journal=Journal(root/'public_journal.jsonl');registry={int(k):v for k,v in trust['registry'].items()}
-    issuer=bytes.fromhex(trust['issuer_pk']);code=ThresholdPublic(**trust['code_key']);release=ThresholdPublic(**trust['release_key'])
+    if 'pki' not in trust:raise SystemExit('Legacy artifact has no certificates; use its historical verifier')
+    if args.ca_root is None and not args.trust_sha256:
+        raise SystemExit('Supply an independently trusted --ca-root or --trust-sha256; refusing self-authenticated keys')
+    root_pem=args.ca_root.read_text() if args.ca_root else trust['pki']['root_certificate']
+    authority=Trust(root_pem,trust['pki']['crl'],trust['pki']['issuer_certificate'],args.min_crl_number)
+    registry=Registry(authority);registry.update({int(k):v for k,v in trust['registry'].items()})
+    for i in registry:
+        member_key(registry,i);member_key(registry,i,'receiving')
+    journal=Journal(root/'public_journal.jsonl')
+    issuer=issuer_key(registry,bytes.fromhex(trust['issuer_pk']));code=ThresholdPublic(**trust['code_key']);release=ThresholdPublic(**trust['release_key'])
     checkpoint=trust['checkpoint']
     if not verify_checkpoint(checkpoint,issuer,registry,release.t):raise SystemExit('Checkpoint signatures invalid')
     if not journal.check(checkpoint['head']['chain']):raise SystemExit('Journal changed or rolled back')
@@ -31,7 +42,7 @@ def main():
         probes=disclosure['opening']['parameters']['probes'];repeats=disclosure['opening']['parameters']['repeats']
         artifact=root/'recipients/v2-U1/model.zip';reader=model_reader(probes,len(probes)//repeats,repeats,args.threads,root)
         passed=judge_file(trace,artifact,reader,journal.entries,checkpoint['head']['chain'],issuer,registry,code)
-    print(json.dumps(dict(verified=passed,scope='independently pinned trust file' if args.trust_sha256 else 'local consistency; keys loaded from experiment directory',
+    print(json.dumps(dict(verified=passed,scope='independently pinned trust file' if args.trust_sha256 else 'externally provisioned CA root',
                          recipients=trace['recipients'],rebuttal_present=(root/'rebuttal.json').exists()),ensure_ascii=False))
     if (root/'rebuttal.json').exists():
         # Separate API source finding from the post-rebuttal verdict.

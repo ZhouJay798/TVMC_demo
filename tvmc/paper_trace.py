@@ -1,6 +1,9 @@
 """Encrypted Tardos scoring, single-use file evidence, public verification.
 Model readout is recomputed by the supplied actual-model reader.
 """
+from .pki import issuer_key
+from .pki import member_key
+
 import math
 import secrets
 from .crypto import P,Q,G,scalar,digest
@@ -127,7 +130,7 @@ class FileTracer:
                 response=next(row for row in batches[i]['responses'] if row['cid']==cid)
                 pr=response['proof'];sig=response['signature']
                 body=dict(context=ctx,proof=pr)
-                if not verify(bytes.fromhex(self.custody.registry[i]['identity']),'score',body,sig):raise ValueError('score identity')
+                if not verify(member_key(self.custody.registry,i),'score',body,sig):raise ValueError('score identity')
                 proofs.append(pr);signatures.append(sig)
             mask=te.combine(pub,a,proofs,ctx)
             score=discrete_log_signed(b*pow(mask,-1,P)%P,bound)
@@ -148,6 +151,7 @@ def judge_file(result,artifact,reader,entries,expected_head,issuer_pk,registry,p
     """
     from .paper_workflow import Ledger
     try:
+        issuer_pk=issuer_key(registry,issuer_pk)
         ledger=Ledger();ledger.entries=entries
         if not ledger.check(expected_head) or result['file_sha256']!=sha(artifact):return False
         group=result['group']; observed=list(reader(artifact))
@@ -192,7 +196,7 @@ def judge_file(result,artifact,reader,entries,expected_head,issuer_pk,registry,p
                 i=approval['member']
                 if (i in approved or i not in registry or
                     not request['seq']<entry['seq']<traces[0]['seq'] or
-                    not verify(bytes.fromhex(registry[i]['identity']),'score-approval',approval,body['signature'])):return False
+                    not verify(member_key(registry,i),'score-approval',approval,body['signature'])):return False
                 approved.add(i)
             if len(approved)<public.t:return False
             if any(p['i'] not in approved for r in result['evidence'] for p in r['proofs']):return False
@@ -204,6 +208,8 @@ def judge_file(result,artifact,reader,entries,expected_head,issuer_pk,registry,p
             manifests=[e for e in entries if e['kind']=='manifest' and e['body']['message']['cid']==cid]
             if len(manifests)!=1:return False
             man=manifests[0]['body'];msg=man['message']
+            member_key(registry,msg['recipient'])
+            member_key(registry,msg['recipient'],'receiving')
             if not commitments[0]['seq']<code['seq']<manifests[0]['seq']<evidence[0]['seq']:return False
             if not verify(issuer_pk,'manifest',msg,man['signature']):return False
             all_codes=[e['body'] for e in entries if e['kind']=='encrypted_codeword' and e['body']['cid']==cid]
@@ -218,7 +224,7 @@ def judge_file(result,artifact,reader,entries,expected_head,issuer_pk,registry,p
             proofs=record['proofs'];sigs=record['signatures']
             if len(proofs)!=len(sigs):return False
             for proof,sig in zip(proofs,sigs):
-                if not verify(bytes.fromhex(registry[proof['i']]['identity']),'score',dict(context=context,proof=proof),sig):return False
+                if not verify(member_key(registry,proof['i']),'score',dict(context=context,proof=proof),sig):return False
             mask=te.combine(public,a,proofs,context)
             score=discrete_log_signed(b*pow(mask,-1,P)%P,bound)
             if record['integer_score']!=score:return False
@@ -328,7 +334,7 @@ def judge_rebuttal(original,rebuttal_bundle,positions,entries,registry,public):
         context=['rebuttal-score',digest(original),cid,sorted(set(positions)),rdigest,a,b]
         if out['context']!=context or len(out['proofs'])!=len(out['signatures']):return False
         for proof,sig in zip(out['proofs'],out['signatures']):
-            if not verify(bytes.fromhex(registry[proof['i']]['identity']),'rebuttal-score',dict(context=context,proof=proof),sig):return False
+            if not verify(member_key(registry,proof['i']),'rebuttal-score',dict(context=context,proof=proof),sig):return False
         shared=te.combine(public,a,out['proofs'],context)
         value=round(out['score']*scale)
         if abs(value)>sum(abs(v) for v in A)+abs(bi)+1:return False

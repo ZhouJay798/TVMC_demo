@@ -205,8 +205,8 @@ def main():
             if suspect_server is not legitimate:suspect_server.close()
             legitimate.close();del api_lab;gc.collect()
     checks['witness_checkpoint']=verify_checkpoint(checkpoint,c.issuer_pk,c.registry,3)
-    trust=dict(issuer_pk=c.issuer_pk.hex(),registry=c.registry,code_key=c.code_key.__dict__,release_key=c.release_key.__dict__,checkpoint=checkpoint)
-    dump(out/'trust.json',trust);dump(out/'trace.json',result)
+    trust=dict(pki=c.registry.trust.export(),issuer_pk=c.issuer_pk.hex(),registry=c.registry,code_key=c.code_key.__dict__,release_key=c.release_key.__dict__,checkpoint=checkpoint)
+    dump(out/'trust.json',trust);(out/'ca-root.pem').write_text(trust['pki']['root_certificate']);dump(out/'trace.json',result)
     report=dict(status='passed' if all(checks.values()) else 'failed',checks=checks,seconds=time.time()-start,
         model=str(args.model.name),model_parameters=sum(p.numel() for p in lab.model.parameters()),corpus_sha256=file_hash(args.corpus),
         evidence_kind=args.evidence,api_details=api_details,bits=args.bits,screen_bits=args.screen_bits,repeats=args.repeats,members=5,threshold=3,

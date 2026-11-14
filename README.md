@@ -8,6 +8,8 @@
 
 2026-11-14：新增[成员独立核算得分的解密批准入口](docs/MEMBER_SCORE_APPROVAL.md)，拒绝指纹密文冒充得分、绑定整批请求，并在公开核验中检查成员批准。仍为同进程角色模拟，非独立密钥保管服务。
 
+新增[CA 证书认证](docs/CA_CERTIFICATES.md)：分发者、成员身份和个人接收公钥均先验 X.509 证书及撤销状态，再使用公钥。
+
 ## 1. 安装
 
 推荐 Python 3.11/3.12。Windows 把下面 `.venv/bin/python` 改成 `.venv\Scripts\python.exe`。
@@ -103,7 +105,7 @@ python -m venv .venv
 仅使用公钥和证据重新核验（文件模式会再次加载真实模型）：
 
 ```bash
-.venv/bin/python verify_experiment.py work/file_demo
+.venv/bin/python verify_experiment.py work/file_demo --ca-root /trusted/tvmc-root.pem
 ```
 
-默认是本地一致性核验。如需防止整个结果目录被替换，预先在目录外保存 `trust.json` 的 SHA256，并通过 `--trust-sha256` 传入。API 原始来源判定与转发申辩后结论分别输出。
+必须通过独立可信渠道预置 CA 根并传入 `--ca-root`，或预先在目录外保存 `trust.json` 的 SHA256 并通过 `--trust-sha256` 传入；两者都没有时拒绝验收。结果目录中的根副本不能自行证明可信。API 原始来源判定与转发申辩后结论分别输出。
